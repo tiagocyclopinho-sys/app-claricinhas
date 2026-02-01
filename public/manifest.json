@@ -1,0 +1,17 @@
+{
+    "name": "Claricinhas",
+    "short_name": "Claricinhas",
+    "description": "Sistema Interno de Controle - Claricinhas",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1a1b1e",
+    "theme_color": "#ff6b6b",
+    "icons": [
+        {
+            "src": "/logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ]
+}

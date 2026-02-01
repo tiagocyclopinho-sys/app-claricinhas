@@ -1,0 +1,109 @@
+.sidebar {
+    width: 260px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    z-index: 100;
+    border-radius: 0 20px 20px 0;
+    border-left: none;
+}
+
+.sidebar-header {
+    padding: 1rem 0 2rem;
+    display: flex;
+    justify-content: center;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 2rem;
+}
+
+.sidebar-logo {
+    height: 300px;
+    /* Aumentado de 60px para 300px (5x) */
+    width: 100%;
+    object-fit: contain;
+}
+
+@media (max-width: 768px) {
+    .sidebar-logo {
+        height: 150px;
+        /* Reduzido no mobile para caber melhor */
+    }
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: transparent;
+    color: var(--text-dim);
+    border-radius: var(--radius-md);
+    text-align: left;
+    font-weight: 500;
+}
+
+.nav-item:hover {
+    background: var(--glass);
+    color: var(--text-main);
+}
+
+.nav-item.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.mobile-toggle {
+    display: none;
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1001;
+    background: var(--primary);
+    color: white;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 99;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        height: 100%;
+        transition: transform 0.3s ease;
+        border-radius: 0;
+    }
+
+    .sidebar.open {
+        transform: translateX(280px);
+    }
+
+    .mobile-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sidebar-overlay {
+        display: block;
+    }
+}
