@@ -22,7 +22,7 @@ function Sidebar({ activePage, setActivePage }) {
 
             <aside className={`sidebar glass-card ${isOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
-                    <img src="/logo.png" alt="Claricinhas Logo" className="sidebar-logo" />
+                    <img src="/4.png" alt="Claricinhas Logo" className="sidebar-logo" />
                 </div>
 
                 <nav className="sidebar-nav">
