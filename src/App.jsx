@@ -191,7 +191,21 @@ function App() {
     }
 
     const renderPage = () => {
-        if (loading) return <div className="loading-screen glass-card">Carregando sincronização...</div>
+        if (loading) return (
+            <div className="loading-screen">
+                <div className="loading-content">
+                    <img src="/4.png" alt="Claricinhas" className="loading-logo pulse" />
+                    <div className="loading-text">
+                        <span>Sincronizando</span>
+                        <div className="dots">
+                            <div className="dot"></div>
+                            <div className="dot"></div>
+                            <div className="dot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
 
         switch (activePage) {
             case 'dashboard': return <Dashboard despesas={despesas} vendas={vendas} producao={producao} setActivePage={setActivePage} />
