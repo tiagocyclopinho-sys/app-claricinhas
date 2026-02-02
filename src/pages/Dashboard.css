@@ -21,7 +21,8 @@
 }
 
 .welcome-logo {
-    height: 45px;
+    height: 135px;
+    /* Aumentado em 3x de 45px */
     width: auto;
     object-fit: contain;
 }
