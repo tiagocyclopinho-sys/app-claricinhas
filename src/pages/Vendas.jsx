@@ -34,7 +34,7 @@ function Vendas({ vendas, onAddVenda, clientes, onAddCliente }) {
 
     const handleAddCliente = (e) => {
         e.preventDefault()
-        const newCliente = { ...clienteForm, id: Date.now().toString() }
+        const newCliente = { ...clienteForm }
         onAddCliente(newCliente)
         setShowClienteModal(false)
         setClienteForm({ nome: '', telefone: '', vip: false })
@@ -60,7 +60,6 @@ function Vendas({ vendas, onAddVenda, clientes, onAddCliente }) {
 
         const newVenda = {
             ...vendaForm,
-            id: Date.now(),
             cliente: cliente?.nome || 'Desconhecido',
             dataVenda: format(new Date(), 'yyyy-MM-dd'),
             parcelas

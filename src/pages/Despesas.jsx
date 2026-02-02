@@ -43,7 +43,6 @@ function Despesas({ despesas, onAdd }) {
         e.preventDefault()
         const newDespesa = {
             ...formData,
-            id: Date.now(),
             valorParcela: formData.parcelado ? (Number(formData.valorTotal) / Number(formData.numParcelas)).toFixed(2) : formData.valorTotal
         }
         onAdd(newDespesa)
