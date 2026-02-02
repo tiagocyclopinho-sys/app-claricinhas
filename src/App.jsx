@@ -41,23 +41,47 @@ function App() {
 
     // Funções de atualização que salvam no Supabase
     const addDespesa = async (item) => {
-        const { data, error } = await supabase.from('despesas').insert([item]).select()
-        if (!error) setDespesas([data[0], ...despesas])
+        try {
+            const { data, error } = await supabase.from('despesas').insert([item]).select()
+            if (error) throw error
+            if (data) setDespesas([data[0], ...despesas])
+        } catch (error) {
+            console.error('Erro ao adicionar despesa:', error)
+            alert('Erro ao salvar no banco de dados: ' + error.message)
+        }
     }
 
     const addProducao = async (item) => {
-        const { data, error } = await supabase.from('producao').insert([item]).select()
-        if (!error) setProducao([data[0], ...producao])
+        try {
+            const { data, error } = await supabase.from('producao').insert([item]).select()
+            if (error) throw error
+            if (data) setProducao([data[0], ...producao])
+        } catch (error) {
+            console.error('Erro ao adicionar produção:', error)
+            alert('Erro ao salvar no banco de dados: ' + error.message)
+        }
     }
 
     const addVenda = async (item) => {
-        const { data, error } = await supabase.from('vendas').insert([item]).select()
-        if (!error) setVendas([data[0], ...vendas])
+        try {
+            const { data, error } = await supabase.from('vendas').insert([item]).select()
+            if (error) throw error
+            if (data) setVendas([data[0], ...vendas])
+        } catch (error) {
+            console.error('Erro ao adicionar venda:', error)
+            alert('Erro ao salvar no banco de dados: ' + error.message)
+        }
     }
 
     const addCliente = async (item) => {
-        const { data, error } = await supabase.from('clientes').insert([item]).select()
-        if (!error) setClientes([data[0], ...clientes])
+        try {
+            const { data, error } = await supabase.from('clientes').insert([item]).select()
+            if (error) throw error
+            if (data) setClientes([data[0], ...clientes])
+        } catch (error) {
+            console.error('Erro ao adicionar cliente:', error)
+            alert('Erro ao salvar no banco de dados: ' + error.message)
+        }
     }
 
     const renderPage = () => {
