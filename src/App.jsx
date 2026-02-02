@@ -28,9 +28,27 @@ function App() {
             const { data: v } = await supabase.from('vendas').select('*').order('created_at', { ascending: false })
             const { data: c } = await supabase.from('clientes').select('*').order('nome')
 
-            if (d) setDespesas(d)
-            if (p) setProducao(p)
-            if (v) setVendas(v)
+            // Ajustar nomes das colunas de snake_case para camelCase (opcional, para não quebrar a UI)
+            if (d) setDespesas(d.map(item => ({
+                ...item,
+                valorTotal: item.valor_total,
+                formaPagamento: item.forma_pagamento,
+                numParcelas: item.num_parcelas,
+                dataVencimento: item.data_vencimento,
+                valorParcela: item.valor_parcela
+            })))
+            if (p) setProducao(p.map(item => ({
+                ...item,
+                valorUnitario: item.valor_unitario,
+                valorTotal: item.valor_total
+            })))
+            if (v) setVendas(v.map(item => ({
+                ...item,
+                valorTotal: item.valor_total,
+                metodoPagamento: item.metodo_pagamento,
+                numParcelas: item.num_parcelas,
+                dataVenda: item.data_venda
+            })))
             if (c) setClientes(c)
         } catch (error) {
             console.error('Erro ao carregar dados:', error)
@@ -42,9 +60,24 @@ function App() {
     // Funções de atualização que salvam no Supabase
     const addDespesa = async (item) => {
         try {
-            const { data, error } = await supabase.from('despesas').insert([item]).select()
+            const dbItem = {
+                descricao: item.descricao,
+                categoria: item.categoria,
+                valor_total: item.valorTotal,
+                valor_parcela: item.valorParcela,
+                forma_pagamento: item.formaPagamento,
+                parcelado: item.parcelado,
+                num_parcelas: item.numParcelas,
+                data_vencimento: item.dataVencimento,
+                status: item.status
+            }
+            const { data, error } = await supabase.from('despesas').insert([dbItem]).select()
             if (error) throw error
-            if (data) setDespesas([data[0], ...despesas])
+            if (data) {
+                const mapped = { ...data[0], valorTotal: data[0].valor_total, dataVencimento: data[0].data_vencimento }
+                setDespesas([mapped, ...despesas])
+                alert('Despesa salva com sucesso!')
+            }
         } catch (error) {
             console.error('Erro ao adicionar despesa:', error)
             alert('Erro ao salvar no banco de dados: ' + error.message)
@@ -53,9 +86,22 @@ function App() {
 
     const addProducao = async (item) => {
         try {
-            const { data, error } = await supabase.from('producao').insert([item]).select()
+            const dbItem = {
+                nome: item.nome,
+                tipo: item.tipo,
+                quantidade: item.quantidade,
+                tamanho: item.tamanho,
+                valor_unitario: item.valorUnitario,
+                valor_total: item.valorTotal,
+                imagem: item.imagem
+            }
+            const { data, error } = await supabase.from('producao').insert([dbItem]).select()
             if (error) throw error
-            if (data) setProducao([data[0], ...producao])
+            if (data) {
+                const mapped = { ...data[0], valorTotal: data[0].valor_total, valorUnitario: data[0].valor_unitario }
+                setProducao([mapped, ...producao])
+                alert('Item de produção salvo!')
+            }
         } catch (error) {
             console.error('Erro ao adicionar produção:', error)
             alert('Erro ao salvar no banco de dados: ' + error.message)
@@ -64,9 +110,22 @@ function App() {
 
     const addVenda = async (item) => {
         try {
-            const { data, error } = await supabase.from('vendas').insert([item]).select()
+            const dbItem = {
+                cliente_nome: item.cliente,
+                itens: item.itens,
+                valor_total: item.valorTotal,
+                metodo_pagamento: item.metodoPagamento,
+                num_parcelas: item.numParcelas,
+                data_venda: item.dataVenda,
+                parcelas: item.parcelas
+            }
+            const { data, error } = await supabase.from('vendas').insert([dbItem]).select()
             if (error) throw error
-            if (data) setVendas([data[0], ...vendas])
+            if (data) {
+                const mapped = { ...data[0], valorTotal: data[0].valor_total, dataVenda: data[0].data_venda, cliente: data[0].cliente_nome }
+                setVendas([mapped, ...vendas])
+                alert('Venda registrada com sucesso!')
+            }
         } catch (error) {
             console.error('Erro ao adicionar venda:', error)
             alert('Erro ao salvar no banco de dados: ' + error.message)
@@ -77,7 +136,10 @@ function App() {
         try {
             const { data, error } = await supabase.from('clientes').insert([item]).select()
             if (error) throw error
-            if (data) setClientes([data[0], ...clientes])
+            if (data) {
+                setClientes([data[0], ...clientes])
+                alert('Cliente cadastrado!')
+            }
         } catch (error) {
             console.error('Erro ao adicionar cliente:', error)
             alert('Erro ao salvar no banco de dados: ' + error.message)
