@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react'
-import { Scissors, Plus, Filter, Search, X, Image as ImageIcon } from 'lucide-react'
+import { Scissors, Plus, Filter, Search, X, Image as ImageIcon, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import './Producao.css'
 
-function Producao({ producao, onAdd }) {
+function Producao({ producao, onAdd, onDelete }) {
     const [showModal, setShowModal] = useState(false)
     const [filterTipo, setFilterTipo] = useState('todos')
 
@@ -94,7 +94,12 @@ function Producao({ producao, onAdd }) {
                                 </span>
                             </div>
                             <div className="product-info">
-                                <h3>{item.nome}</h3>
+                                <div className="p-header">
+                                    <h3>{item.nome}</h3>
+                                    <button className="delete-card-btn" onClick={() => onDelete(item.id)}>
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                                 <p className="product-details">{item.tamanho} • {item.quantidade} unidades</p>
                                 <div className="product-price">
                                     <span className="unit-price">R$ {Number(item.valorUnitario).toFixed(2)} un.</span>

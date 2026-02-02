@@ -77,3 +77,37 @@ textarea {
     border-radius: var(--radius-md);
     box-shadow: var(--shadow);
 }
+
+/* Botões de Ação */
+.delete-table-btn,
+.delete-card-btn {
+    background: rgba(250, 82, 82, 0.1);
+    color: #fa5252;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.delete-table-btn:hover,
+.delete-card-btn:hover {
+    background: #fa5252;
+    color: white;
+    transform: scale(1.1);
+}
+
+.p-header,
+.v-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.v-actions {
+    gap: 1rem;
+}

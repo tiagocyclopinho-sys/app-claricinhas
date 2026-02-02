@@ -146,14 +146,58 @@ function App() {
         }
     }
 
+    const deleteDespesa = async (id) => {
+        if (!window.confirm('Tem certeza que deseja excluir esta despesa?')) return
+        try {
+            const { error } = await supabase.from('despesas').delete().eq('id', id)
+            if (error) throw error
+            setDespesas(despesas.filter(d => d.id !== id))
+        } catch (error) {
+            alert('Erro ao excluir: ' + error.message)
+        }
+    }
+
+    const deleteProducao = async (id) => {
+        if (!window.confirm('Tem certeza que deseja excluir este item da produção?')) return
+        try {
+            const { error } = await supabase.from('producao').delete().eq('id', id)
+            if (error) throw error
+            setProducao(producao.filter(p => p.id !== id))
+        } catch (error) {
+            alert('Erro ao excluir: ' + error.message)
+        }
+    }
+
+    const deleteVenda = async (id) => {
+        if (!window.confirm('Tem certeza que deseja excluir esta venda?')) return
+        try {
+            const { error } = await supabase.from('vendas').delete().eq('id', id)
+            if (error) throw error
+            setVendas(vendas.filter(v => v.id !== id))
+        } catch (error) {
+            alert('Erro ao excluir: ' + error.message)
+        }
+    }
+
+    const deleteCliente = async (id) => {
+        if (!window.confirm('Ao excluir um cliente, as vendas dele não serão apagadas, mas perderão a referência. Deseja continuar?')) return
+        try {
+            const { error } = await supabase.from('clientes').delete().eq('id', id)
+            if (error) throw error
+            setClientes(clientes.filter(c => c.id !== id))
+        } catch (error) {
+            alert('Erro ao excluir: ' + error.message)
+        }
+    }
+
     const renderPage = () => {
         if (loading) return <div className="loading-screen glass-card">Carregando sincronização...</div>
 
         switch (activePage) {
             case 'dashboard': return <Dashboard despesas={despesas} vendas={vendas} producao={producao} setActivePage={setActivePage} />
-            case 'despesas': return <Despesas despesas={despesas} onAdd={addDespesa} />
-            case 'producao': return <Producao producao={producao} onAdd={addProducao} />
-            case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} clientes={clientes} onAddCliente={addCliente} />
+            case 'despesas': return <Despesas despesas={despesas} onAdd={addDespesa} onDelete={deleteDespesa} />
+            case 'producao': return <Producao producao={producao} onAdd={addProducao} onDelete={deleteProducao} />
+            case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} onDeleteVenda={deleteVenda} clientes={clientes} onAddCliente={addCliente} onDeleteCliente={deleteCliente} />
             default: return <Dashboard />
         }
     }

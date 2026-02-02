@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react'
-import { ShoppingBag, Plus, UserPlus, Star, Clock, X, Phone } from 'lucide-react'
+import { ShoppingBag, Plus, UserPlus, Star, Clock, X, Phone, Trash2 } from 'lucide-react'
 import { format, parseISO, differenceInDays, addMonths } from 'date-fns'
 import './Vendas.css'
 
-function Vendas({ vendas, onAddVenda, clientes, onAddCliente }) {
+function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onDeleteCliente }) {
     const [showVendaModal, setShowVendaModal] = useState(false)
     const [showClienteModal, setShowClienteModal] = useState(false)
+    const [showManageClients, setShowManageClients] = useState(false)
     const [filterVip, setFilterVip] = useState(false)
 
     // Estados dos formulários
@@ -113,6 +114,9 @@ function Vendas({ vendas, onAddVenda, clientes, onAddCliente }) {
                 >
                     <Star size={16} fill={filterVip ? "currentColor" : "none"} /> Apenas Clientes VIP
                 </button>
+                <button className="secondary-btn" onClick={() => setShowManageClients(true)} style={{ marginLeft: 'auto', padding: '0.4rem 1rem' }}>
+                    <UserPlus size={16} /> Gerenciar Clientes
+                </button>
             </div>
 
             <div className="vendas-list">
@@ -122,7 +126,12 @@ function Vendas({ vendas, onAddVenda, clientes, onAddCliente }) {
                             <div className="venda-main">
                                 <div className="venda-header">
                                     <h3>{venda.cliente} {clientes.find(c => c.id === venda.clienteId)?.vip && <Star size={14} className="vip-icon" fill="var(--accent)" color="var(--accent)" />}</h3>
-                                    <span className="venda-date">{format(parseISO(venda.dataVenda), 'dd/MM/yyyy')}</span>
+                                    <div className="v-actions">
+                                        <span className="venda-date">{format(parseISO(venda.dataVenda), 'dd/MM/yyyy')}</span>
+                                        <button className="delete-card-btn" onClick={() => onDeleteVenda(venda.id)}>
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                                 <p className="venda-itens">{venda.itens}</p>
                                 <div className="venda-footer">
@@ -280,6 +289,36 @@ function Vendas({ vendas, onAddVenda, clientes, onAddCliente }) {
 
                             <button type="submit" className="submit-btn" disabled={!vendaForm.clienteId}>Registrar Venda</button>
                         </form>
+                    </div>
+                </div>
+            )}
+            {/* Modal Gerenciar Clientes */}
+            {showManageClients && (
+                <div className="modal-overlay">
+                    <div className="modal-content glass-card" style={{ maxWidth: '500px' }}>
+                        <div className="modal-header">
+                            <h2>Lista de Clientes</h2>
+                            <button onClick={() => setShowManageClients(false)}><X /></button>
+                        </div>
+                        <div className="clients-manage-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                            {clientes.map(c => (
+                                <div key={c.id} className="client-manage-item" style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '1rem',
+                                    borderBottom: '1px solid var(--glass-border)'
+                                }}>
+                                    <div>
+                                        <strong>{c.nome}</strong>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>{c.telefone}</p>
+                                    </div>
+                                    <button className="delete-table-btn" onClick={() => onDeleteCliente(c.id)}>
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}

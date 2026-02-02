@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react'
-import { Receipt, Plus, Filter, Search, X } from 'lucide-react'
+import { Receipt, Plus, Filter, Search, X, Trash2 } from 'lucide-react'
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 import './Despesas.css'
 
-function Despesas({ despesas, onAdd }) {
+function Despesas({ despesas, onAdd, onDelete }) {
     const [showModal, setShowModal] = useState(false)
     const [filterPeriod, setFilterPeriod] = useState('mes') // mes, tudo
     const [filterMetodo, setFilterMetodo] = useState('todos')
@@ -102,6 +102,7 @@ function Despesas({ despesas, onAdd }) {
                             <th>Pagamento</th>
                             <th>Vencimento</th>
                             <th>Status</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -117,6 +118,11 @@ function Despesas({ despesas, onAdd }) {
                                         <span className={`badge status ${d.status.toLowerCase()}`}>
                                             {d.status}
                                         </span>
+                                    </td>
+                                    <td>
+                                        <button className="delete-table-btn" onClick={() => onDelete(d.id)} title="Excluir">
+                                            <Trash2 size={18} />
+                                        </button>
                                     </td>
                                 </tr>
                             ))
