@@ -103,6 +103,16 @@
     color: var(--primary);
 }
 
+.metodo-badge.débito {
+    background: rgba(56, 178, 172, 0.2);
+    color: #38b2ac;
+}
+
+.metodo-badge.crédito {
+    background: rgba(159, 122, 234, 0.2);
+    color: #9f7aea;
+}
+
 .venda-valor {
     font-size: 1.4rem;
     font-weight: 700;

@@ -45,16 +45,17 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
         e.preventDefault()
         const cliente = clientes.find(c => c.id === vendaForm.clienteId)
 
-        // Gerar parcelas se for crediário
+        // Gerar parcelas se for crediário ou crédito parcelado
         let parcelas = []
-        if (vendaForm.metodoPagamento === 'Crediário') {
-            const valorParcela = (Number(vendaForm.valorTotal) / Number(vendaForm.numParcelas)).toFixed(2)
-            for (let i = 0; i < Number(vendaForm.numParcelas); i++) {
+        if (vendaForm.metodoPagamento === 'Crediário' || (vendaForm.metodoPagamento === 'Crédito' && Number(vendaForm.numParcelas) > 1)) {
+            const totalParcelas = Number(vendaForm.numParcelas)
+            const valorParcela = (Number(vendaForm.valorTotal) / totalParcelas).toFixed(2)
+            for (let i = 0; i < totalParcelas; i++) {
                 parcelas.push({
                     id: i,
                     valor: valorParcela,
                     vencimento: format(addMonths(parseISO(vendaForm.primeiroVencimento), i), 'yyyy-MM-dd'),
-                    paga: false
+                    paga: vendaForm.metodoPagamento === 'Crédito' // Crédito já é considerado "pago" pelo cliente (recebido pela operadora)
                 })
             }
         }
@@ -142,7 +143,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                 </div>
                             </div>
 
-                            {venda.metodoPagamento === 'Crediário' && (
+                            {(venda.metodoPagamento === 'Crediário' || (venda.metodoPagamento === 'Crédito' && venda.parcelas?.length > 1)) && (
                                 <div className="parcelas-section">
                                     <h4>Parcelas</h4>
                                     <div className="parcelas-grid">
@@ -259,13 +260,15 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                         value={vendaForm.metodoPagamento}
                                         onChange={(e) => setVendaForm({ ...vendaForm, metodoPagamento: e.target.value })}
                                     >
-                                        <option value="À vista">À vista</option>
+                                        <option value="À vista">À vista (Dinheiro/Pix)</option>
+                                        <option value="Débito">Débito</option>
+                                        <option value="Crédito">Crédito</option>
                                         <option value="Crediário">Crediário</option>
                                     </select>
                                 </div>
                             </div>
 
-                            {vendaForm.metodoPagamento === 'Crediário' && (
+                            {(vendaForm.metodoPagamento === 'Crediário' || vendaForm.metodoPagamento === 'Crédito') && (
                                 <div className="form-row anim-in">
                                     <div className="form-group">
                                         <label>Nº de Parcelas</label>

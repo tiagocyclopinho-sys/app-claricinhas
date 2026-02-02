@@ -233,7 +233,7 @@ function App() {
             case 'dashboard': return <Dashboard despesas={despesas} vendas={vendas} producao={producao} setActivePage={setActivePage} />
             case 'despesas': return <Despesas despesas={despesas} onAdd={addDespesa} onDelete={deleteDespesa} />
             case 'producao': return <Producao producao={producao} onAdd={addProducao} onDelete={deleteProducao} />
-            case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} onDeleteVenda={deleteVenda} clientes={clientes} />
+            case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} onDeleteVenda={deleteVenda} clientes={clientes} onAddCliente={addCliente} onDeleteCliente={deleteCliente} />
             case 'clientes': return <Clientes clientes={clientes} onAdd={addCliente} onDelete={deleteCliente} />
             default: return <Dashboard />
         }
