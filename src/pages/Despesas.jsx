@@ -62,7 +62,7 @@ function Despesas({ despesas, onAdd, onDelete }) {
     return (
         <div className="despesas-page">
             <header className="page-header">
-                <h1>Controle de Despesas</h1>
+                <h1>Despesas</h1>
                 <button className="add-btn" onClick={() => setShowModal(true)}>
                     <Plus size={20} /> Nova Despesa
                 </button>

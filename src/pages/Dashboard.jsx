@@ -44,7 +44,7 @@ function Dashboard({ despesas, vendas, producao, setActivePage }) {
         <div className="dashboard-page">
             <header className="page-header">
                 <div>
-                    <h1>Olá, Bem-vinda! <img src="/5.png" alt="Logo" className="welcome-logo" /></h1>
+                    <h1>Olá, <img src="/5.png" alt="Logo" className="welcome-logo" /></h1>
                     <p className="subtitle">Aqui está o resumo da Claricinhas hoje.</p>
                 </div>
 

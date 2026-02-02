@@ -62,7 +62,7 @@ function Producao({ producao, onAdd, onDelete }) {
     return (
         <div className="producao-page">
             <header className="page-header">
-                <h1>Controle de Produção</h1>
+                <h1>Facção / Compra</h1>
                 <button className="add-btn" onClick={() => setShowModal(true)}>
                     <Plus size={20} /> Adicionar Item
                 </button>

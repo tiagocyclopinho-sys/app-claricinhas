@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Users, UserPlus, Phone, Star, Trash2, X, Search } from 'lucide-react'
+import { Users, UserPlus, Phone, Star, Trash2, X, Search, MessageSquare } from 'lucide-react'
 import './Clientes.css'
 
 function Clientes({ clientes, onAdd, onDelete }) {
@@ -26,7 +26,7 @@ function Clientes({ clientes, onAdd, onDelete }) {
     return (
         <div className="clientes-page">
             <header className="page-header">
-                <h1>Gerenciamento de Clientes</h1>
+                <h1>Clientes</h1>
                 <button className="add-btn" onClick={() => setShowModal(true)}>
                     <UserPlus size={20} /> Novo Cliente
                 </button>
@@ -68,9 +68,21 @@ function Clientes({ clientes, onAdd, onDelete }) {
                                     </span>
                                 </td>
                                 <td>
-                                    <button className="delete-table-btn" onClick={() => onDelete(cliente.id)}>
-                                        <Trash2 size={18} />
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            className="action-table-btn whatsapp"
+                                            onClick={() => {
+                                                const tel = cliente.telefone.replace(/\D/g, '')
+                                                window.open(`https://wa.me/55${tel}`, '_blank')
+                                            }}
+                                            title="Chamar no WhatsApp"
+                                        >
+                                            <MessageSquare size={18} />
+                                        </button>
+                                        <button className="delete-table-btn" onClick={() => onDelete(cliente.id)} title="Excluir">
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}

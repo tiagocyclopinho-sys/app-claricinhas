@@ -96,7 +96,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
     return (
         <div className="vendas-page">
             <header className="page-header">
-                <h1>Vendas e Crediário</h1>
+                <h1>Vendas</h1>
                 <div className="header-actions">
                     <button className="secondary-btn" onClick={() => setShowClienteModal(true)}>
                         <UserPlus size={18} /> Novo Cliente
