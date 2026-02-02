@@ -1,5 +1,5 @@
 import React from 'react'
-import { LayoutDashboard, Receipt, Scissors, ShoppingBag, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Receipt, Scissors, ShoppingBag, Menu, X, Users } from 'lucide-react'
 import './Sidebar.css'
 
 function Sidebar({ activePage, setActivePage }) {
@@ -10,6 +10,7 @@ function Sidebar({ activePage, setActivePage }) {
         { id: 'despesas', label: 'Despesas', icon: Receipt },
         { id: 'producao', label: 'Produção', icon: Scissors },
         { id: 'vendas', label: 'Vendas', icon: ShoppingBag },
+        { id: 'clientes', label: 'Clientes', icon: Users },
     ]
 
     const toggleSidebar = () => setIsOpen(!isOpen)

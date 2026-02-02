@@ -1,0 +1,43 @@
+.clientes-page {
+    animation: fadeIn 0.5s ease;
+}
+
+.search-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+    width: 100%;
+}
+
+.search-group input {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    width: 100%;
+    font-size: 1rem;
+}
+
+.client-name {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+.badge.vip {
+    background: rgba(250, 176, 5, 0.15);
+    color: var(--accent);
+}
+
+.badge.basic {
+    background: rgba(173, 181, 189, 0.1);
+    color: var(--text-dim);
+}
+
+@media (max-width: 768px) {
+    .filters-bar {
+        flex-direction: column;
+    }
+}

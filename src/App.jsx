@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import Despesas from './pages/Despesas'
 import Producao from './pages/Producao'
 import Vendas from './pages/Vendas'
+import Clientes from './pages/Clientes'
 import { supabase } from './supabaseClient'
 import './App.css'
 
@@ -14,6 +15,27 @@ function App() {
     const [vendas, setVendas] = useState([])
     const [clientes, setClientes] = useState([])
     const [loading, setLoading] = useState(true)
+
+    // Lógica para o botão Voltar do aparelho
+    useEffect(() => {
+        const handleBackButton = (e) => {
+            if (activePage !== 'dashboard') {
+                e.preventDefault()
+                setActivePage('dashboard')
+                // Empurra o estado do dashboard de volta para a história
+                window.history.pushState({ page: 'dashboard' }, '')
+            }
+        }
+
+        window.addEventListener('popstate', handleBackButton)
+
+        // Inicializa o estado da história
+        if (window.history.state?.page !== activePage) {
+            window.history.pushState({ page: activePage }, '')
+        }
+
+        return () => window.removeEventListener('popstate', handleBackButton)
+    }, [activePage])
 
     // Carregar dados iniciais do Supabase
     useEffect(() => {
@@ -211,7 +233,8 @@ function App() {
             case 'dashboard': return <Dashboard despesas={despesas} vendas={vendas} producao={producao} setActivePage={setActivePage} />
             case 'despesas': return <Despesas despesas={despesas} onAdd={addDespesa} onDelete={deleteDespesa} />
             case 'producao': return <Producao producao={producao} onAdd={addProducao} onDelete={deleteProducao} />
-            case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} onDeleteVenda={deleteVenda} clientes={clientes} onAddCliente={addCliente} onDeleteCliente={deleteCliente} />
+            case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} onDeleteVenda={deleteVenda} clientes={clientes} />
+            case 'clientes': return <Clientes clientes={clientes} onAdd={addCliente} onDelete={deleteCliente} />
             default: return <Dashboard />
         }
     }

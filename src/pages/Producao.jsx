@@ -145,12 +145,20 @@ function Producao({ producao, onAdd, onDelete }) {
                                 </div>
                                 <div className="form-group">
                                     <label>Tamanho</label>
-                                    <input
-                                        type="text"
+                                    <select
                                         value={formData.tamanho}
                                         onChange={(e) => setFormData({ ...formData, tamanho: e.target.value })}
-                                        placeholder="PP, P, M, G, GG..."
-                                    />
+                                    >
+                                        <option value="P">P</option>
+                                        <option value="M">M</option>
+                                        <option value="G">G</option>
+                                        <option value="GG">GG</option>
+                                        <option value="UNICO">UNICO</option>
+                                        <option value="INF P">INF P</option>
+                                        <option value="INF M">INF M</option>
+                                        <option value="INF G">INF G</option>
+                                        <option value="INF GG">INF GG</option>
+                                    </select>
                                 </div>
                             </div>
 
