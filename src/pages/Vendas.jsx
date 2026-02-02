@@ -3,7 +3,7 @@ import { ShoppingBag, Plus, UserPlus, Star, Clock, X, Phone } from 'lucide-react
 import { format, parseISO, differenceInDays, addMonths } from 'date-fns'
 import './Vendas.css'
 
-function Vendas({ vendas, setVendas, clientes, setClientes }) {
+function Vendas({ vendas, onAddVenda, clientes, onAddCliente }) {
     const [showVendaModal, setShowVendaModal] = useState(false)
     const [showClienteModal, setShowClienteModal] = useState(false)
     const [filterVip, setFilterVip] = useState(false)
@@ -35,7 +35,7 @@ function Vendas({ vendas, setVendas, clientes, setClientes }) {
     const handleAddCliente = (e) => {
         e.preventDefault()
         const newCliente = { ...clienteForm, id: Date.now().toString() }
-        setClientes([...clientes, newCliente])
+        onAddCliente(newCliente)
         setShowClienteModal(false)
         setClienteForm({ nome: '', telefone: '', vip: false })
     }
@@ -66,7 +66,7 @@ function Vendas({ vendas, setVendas, clientes, setClientes }) {
             parcelas
         }
 
-        setVendas([newVenda, ...vendas])
+        onAddVenda(newVenda)
         setShowVendaModal(false)
         setVendaForm({
             clienteId: '',

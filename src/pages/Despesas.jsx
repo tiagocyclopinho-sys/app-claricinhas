@@ -3,7 +3,7 @@ import { Receipt, Plus, Filter, Search, X } from 'lucide-react'
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 import './Despesas.css'
 
-function Despesas({ despesas, setDespesas }) {
+function Despesas({ despesas, onAdd }) {
     const [showModal, setShowModal] = useState(false)
     const [filterPeriod, setFilterPeriod] = useState('mes') // mes, tudo
     const [filterMetodo, setFilterMetodo] = useState('todos')
@@ -46,7 +46,7 @@ function Despesas({ despesas, setDespesas }) {
             id: Date.now(),
             valorParcela: formData.parcelado ? (Number(formData.valorTotal) / Number(formData.numParcelas)).toFixed(2) : formData.valorTotal
         }
-        setDespesas([newDespesa, ...despesas])
+        onAdd(newDespesa)
         setShowModal(false)
         setFormData({
             descricao: '',

@@ -4,55 +4,70 @@ import Dashboard from './pages/Dashboard'
 import Despesas from './pages/Despesas'
 import Producao from './pages/Producao'
 import Vendas from './pages/Vendas'
+import { supabase } from './supabaseClient'
 import './App.css'
 
 function App() {
     const [activePage, setActivePage] = useState('dashboard')
+    const [despesas, setDespesas] = useState([])
+    const [producao, setProducao] = useState([])
+    const [vendas, setVendas] = useState([])
+    const [clientes, setClientes] = useState([])
+    const [loading, setLoading] = useState(true)
 
-    // Mock de dados centralizado
-    const [despesas, setDespesas] = useState(() => {
-        const saved = localStorage.getItem('claricinhas_despesas')
-        return saved ? JSON.parse(saved) : []
-    })
-
-    const [producao, setProducao] = useState(() => {
-        const saved = localStorage.getItem('claricinhas_producao')
-        return saved ? JSON.parse(saved) : []
-    })
-
-    const [vendas, setVendas] = useState(() => {
-        const saved = localStorage.getItem('claricinhas_vendas')
-        return saved ? JSON.parse(saved) : []
-    })
-
-    const [clientes, setClientes] = useState(() => {
-        const saved = localStorage.getItem('claricinhas_clientes')
-        return saved ? JSON.parse(saved) : []
-    })
-
-    // Persistência
+    // Carregar dados iniciais do Supabase
     useEffect(() => {
-        localStorage.setItem('claricinhas_despesas', JSON.stringify(despesas))
-    }, [despesas])
+        fetchData()
+    }, [])
 
-    useEffect(() => {
-        localStorage.setItem('claricinhas_producao', JSON.stringify(producao))
-    }, [producao])
+    const fetchData = async () => {
+        setLoading(true)
+        try {
+            const { data: d } = await supabase.from('despesas').select('*').order('created_at', { ascending: false })
+            const { data: p } = await supabase.from('producao').select('*').order('created_at', { ascending: false })
+            const { data: v } = await supabase.from('vendas').select('*').order('created_at', { ascending: false })
+            const { data: c } = await supabase.from('clientes').select('*').order('nome')
 
-    useEffect(() => {
-        localStorage.setItem('claricinhas_vendas', JSON.stringify(vendas))
-    }, [vendas])
+            if (d) setDespesas(d)
+            if (p) setProducao(p)
+            if (v) setVendas(v)
+            if (c) setClientes(c)
+        } catch (error) {
+            console.error('Erro ao carregar dados:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
 
-    useEffect(() => {
-        localStorage.setItem('claricinhas_clientes', JSON.stringify(clientes))
-    }, [clientes])
+    // Funções de atualização que salvam no Supabase
+    const addDespesa = async (item) => {
+        const { data, error } = await supabase.from('despesas').insert([item]).select()
+        if (!error) setDespesas([data[0], ...despesas])
+    }
+
+    const addProducao = async (item) => {
+        const { data, error } = await supabase.from('producao').insert([item]).select()
+        if (!error) setProducao([data[0], ...producao])
+    }
+
+    const addVenda = async (item) => {
+        const { data, error } = await supabase.from('vendas').insert([item]).select()
+        if (!error) setVendas([data[0], ...vendas])
+    }
+
+    const addCliente = async (item) => {
+        const { data, error } = await supabase.from('clientes').insert([item]).select()
+        if (!error) setClientes([data[0], ...clientes])
+    }
 
     const renderPage = () => {
+        if (loading) return <div className="loading-screen glass-card">Carregando sincronização...</div>
+
         switch (activePage) {
             case 'dashboard': return <Dashboard despesas={despesas} vendas={vendas} producao={producao} setActivePage={setActivePage} />
-            case 'despesas': return <Despesas despesas={despesas} setDespesas={setDespesas} />
-            case 'producao': return <Producao producao={producao} setProducao={setProducao} />
-            case 'vendas': return <Vendas vendas={vendas} setVendas={setVendas} clientes={clientes} setClientes={setClientes} />
+            case 'despesas': return <Despesas despesas={despesas} onAdd={addDespesa} />
+            case 'producao': return <Producao producao={producao} onAdd={addProducao} />
+            case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} clientes={clientes} onAddCliente={addCliente} />
             default: return <Dashboard />
         }
     }

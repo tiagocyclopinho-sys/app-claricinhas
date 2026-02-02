@@ -3,7 +3,7 @@ import { Scissors, Plus, Filter, Search, X, Image as ImageIcon } from 'lucide-re
 import { format } from 'date-fns'
 import './Producao.css'
 
-function Producao({ producao, setProducao }) {
+function Producao({ producao, onAdd }) {
     const [showModal, setShowModal] = useState(false)
     const [filterTipo, setFilterTipo] = useState('todos')
 
@@ -33,10 +33,9 @@ function Producao({ producao, setProducao }) {
         e.preventDefault()
         const newItem = {
             ...formData,
-            id: Date.now(),
             valorTotal: (Number(formData.quantidade) * Number(formData.valorUnitario)).toFixed(2)
         }
-        setProducao([newItem, ...producao])
+        onAdd(newItem)
         setShowModal(false)
         setFormData({
             nome: '',
