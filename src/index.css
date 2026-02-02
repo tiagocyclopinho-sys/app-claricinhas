@@ -100,6 +100,30 @@ textarea {
     transform: scale(1.1);
 }
 
+.action-table-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-dim);
+    border: none;
+    padding: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.action-table-btn.whatsapp {
+    color: #25d366;
+    background: rgba(37, 211, 102, 0.1);
+}
+
+.action-table-btn.whatsapp:hover {
+    background: #25d366;
+    color: white;
+    transform: scale(1.1);
+}
+
 .p-header,
 .v-actions {
     display: flex;
