@@ -93,9 +93,14 @@
     font-weight: 700;
 }
 
-.metodo-badge.à {
+.metodo-badge.dinheiro {
     background: rgba(77, 171, 247, 0.2);
     color: var(--secondary);
+}
+
+.metodo-badge.pix {
+    background: rgba(32, 201, 151, 0.2);
+    color: #20c997;
 }
 
 .metodo-badge.crediário {

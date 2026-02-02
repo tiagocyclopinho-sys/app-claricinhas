@@ -14,7 +14,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
         clienteId: '',
         itens: '',
         valorTotal: '',
-        metodoPagamento: 'À vista',
+        metodoPagamento: 'Dinheiro',
         numParcelas: 1,
         primeiroVencimento: format(new Date(), 'yyyy-MM-dd')
     })
@@ -73,7 +73,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
             clienteId: '',
             itens: '',
             valorTotal: '',
-            metodoPagamento: 'À vista',
+            metodoPagamento: 'Dinheiro',
             numParcelas: 1,
             primeiroVencimento: format(new Date(), 'yyyy-MM-dd')
         })
@@ -260,7 +260,8 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                         value={vendaForm.metodoPagamento}
                                         onChange={(e) => setVendaForm({ ...vendaForm, metodoPagamento: e.target.value })}
                                     >
-                                        <option value="À vista">À vista (Dinheiro/Pix)</option>
+                                        <option value="Dinheiro">Dinheiro</option>
+                                        <option value="Pix">Pix</option>
                                         <option value="Débito">Débito</option>
                                         <option value="Crédito">Crédito</option>
                                         <option value="Crediário">Crediário</option>
