@@ -168,6 +168,23 @@ function App() {
         }
     }
 
+    const updateCliente = async (id, updates) => {
+        try {
+            const { data, error } = await supabase.from('clientes').update(updates).eq('id', id).select()
+            if (error) throw error
+            if (data) {
+                setClientes(clientes.map(c => c.id === id ? data[0] : c))
+                // Também atualizar o nome do cliente nas vendas se o nome mudou (opcional, mas bom para consistência visual)
+                if (updates.nome) {
+                    setVendas(vendas.map(v => v.clienteId === id ? { ...v, cliente: updates.nome } : v))
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar cliente:', error)
+            alert('Erro ao atualizar no banco de dados: ' + error.message)
+        }
+    }
+
     const deleteDespesa = async (id) => {
         if (!window.confirm('Tem certeza que deseja excluir esta despesa?')) return
         try {
@@ -233,8 +250,8 @@ function App() {
             case 'dashboard': return <Dashboard despesas={despesas} vendas={vendas} producao={producao} setActivePage={setActivePage} />
             case 'despesas': return <Despesas despesas={despesas} onAdd={addDespesa} onDelete={deleteDespesa} />
             case 'producao': return <Producao producao={producao} onAdd={addProducao} onDelete={deleteProducao} />
-            case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} onDeleteVenda={deleteVenda} clientes={clientes} onAddCliente={addCliente} onDeleteCliente={deleteCliente} />
-            case 'clientes': return <Clientes clientes={clientes} onAdd={addCliente} onDelete={deleteCliente} />
+            case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} onDeleteVenda={deleteVenda} clientes={clientes} onAddCliente={addCliente} onDeleteCliente={deleteCliente} onUpdateCliente={updateCliente} />
+            case 'clientes': return <Clientes clientes={clientes} onAdd={addCliente} onDelete={deleteCliente} onUpdate={updateCliente} />
             default: return <Dashboard />
         }
     }

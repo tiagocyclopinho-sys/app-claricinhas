@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { Users, UserPlus, Phone, Star, Trash2, X, Search, MessageSquare, BookOpen } from 'lucide-react'
+import { Users, UserPlus, Phone, Star, Trash2, X, Search, MessageSquare, BookOpen, Edit2 } from 'lucide-react'
 import './Clientes.css'
 
-function Clientes({ clientes, onAdd, onDelete }) {
+function Clientes({ clientes, onAdd, onDelete, onUpdate }) {
     const [showModal, setShowModal] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
+    const [editingId, setEditingId] = useState(null)
     const [formData, setFormData] = useState({
         nome: '',
         telefone: '',
@@ -18,8 +19,27 @@ function Clientes({ clientes, onAdd, onDelete }) {
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        onAdd(formData)
+        if (editingId) {
+            onUpdate(editingId, formData)
+        } else {
+            onAdd(formData)
+        }
+        handleCloseModal()
+    }
+
+    const handleEdit = (cliente) => {
+        setEditingId(cliente.id)
+        setFormData({
+            nome: cliente.nome,
+            telefone: cliente.telefone,
+            vip: cliente.vip
+        })
+        setShowModal(true)
+    }
+
+    const handleCloseModal = () => {
         setShowModal(false)
+        setEditingId(null)
         setFormData({ nome: '', telefone: '', vip: false })
     }
 
@@ -70,7 +90,7 @@ function Clientes({ clientes, onAdd, onDelete }) {
                             <BookOpen size={20} /> Importar Agenda
                         </button>
                     )}
-                    <button className="add-btn" onClick={() => setShowModal(true)}>
+                    <button className="add-btn" onClick={() => { setEditingId(null); setShowModal(true); }}>
                         <UserPlus size={20} /> Novo Cliente
                     </button>
                 </div>
@@ -114,6 +134,22 @@ function Clientes({ clientes, onAdd, onDelete }) {
                                 <td>
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button
+                                            className="action-table-btn edit"
+                                            onClick={() => onUpdate(cliente.id, { vip: !cliente.vip })}
+                                            title={cliente.vip ? "Remover VIP" : "Tornar VIP"}
+                                            style={{ background: cliente.vip ? 'rgba(250, 176, 5, 0.2)' : 'rgba(255, 255, 255, 0.05)', color: cliente.vip ? 'var(--accent)' : 'var(--text-dim)' }}
+                                        >
+                                            <Star size={18} fill={cliente.vip ? "var(--accent)" : "none"} />
+                                        </button>
+                                        <button
+                                            className="action-table-btn edit"
+                                            onClick={() => handleEdit(cliente)}
+                                            title="Editar Cliente"
+                                            style={{ background: 'rgba(77, 171, 247, 0.1)', color: 'var(--secondary)' }}
+                                        >
+                                            <Edit2 size={18} />
+                                        </button>
+                                        <button
                                             className="action-table-btn whatsapp"
                                             onClick={() => {
                                                 const tel = cliente.telefone.replace(/\D/g, '')
@@ -138,8 +174,8 @@ function Clientes({ clientes, onAdd, onDelete }) {
                 <div className="modal-overlay">
                     <div className="modal-content glass-card">
                         <div className="modal-header">
-                            <h2>Novo Cliente</h2>
-                            <button onClick={() => setShowModal(false)}><X /></button>
+                            <h2>{editingId ? 'Editar Cliente' : 'Novo Cliente'}</h2>
+                            <button onClick={handleCloseModal}><X /></button>
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className="form-group">
@@ -170,7 +206,9 @@ function Clientes({ clientes, onAdd, onDelete }) {
                                 />
                                 <label htmlFor="vip-check">Marcar como Cliente VIP</label>
                             </div>
-                            <button type="submit" className="submit-btn">Salvar Cliente</button>
+                            <button type="submit" className="submit-btn">
+                                {editingId ? 'Salvar Alterações' : 'Salvar Cliente'}
+                            </button>
                         </form>
                     </div>
                 </div>
