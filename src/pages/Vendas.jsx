@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { ShoppingBag, Plus, UserPlus, Star, Clock, X, Phone, Trash2 } from 'lucide-react'
+import { ShoppingBag, Plus, UserPlus, Star, Clock, X, Phone, Trash2, BookOpen } from 'lucide-react'
 import { format, parseISO, differenceInDays, addMonths } from 'date-fns'
 import './Vendas.css'
 
@@ -39,6 +39,32 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
         onAddCliente(newCliente)
         setShowClienteModal(false)
         setClienteForm({ nome: '', telefone: '', vip: false })
+    }
+
+    const handleImportContacts = async () => {
+        const supported = 'contacts' in navigator && 'ContactsManager' in window
+        if (!supported) {
+            alert('A importação de contatos não é suportada neste navegador ou dispositivo.')
+            return
+        }
+
+        try {
+            const props = ['name', 'tel']
+            const options = { multiple: true }
+            const contacts = await navigator.contacts.select(props, options)
+
+            if (contacts.length > 0) {
+                contacts.forEach(contact => {
+                    const nome = contact.name && contact.name[0] ? contact.name[0] : 'Contato Sem Nome'
+                    const telefone = contact.tel && contact.tel[0] ? contact.tel[0] : ''
+                    const telLimpo = telefone.replace(/[^\d+]/g, '')
+                    onAddCliente({ nome, telefone: telLimpo, vip: false })
+                })
+                alert(`${contacts.length} contato(s) importado(s)!`)
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') console.error(err)
+        }
     }
 
     const handleAddVenda = (e) => {
@@ -99,6 +125,11 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
             <header className="page-header">
                 <h1>Vendas</h1>
                 <div className="header-actions">
+                    {('contacts' in navigator) && (
+                        <button className="secondary-btn" onClick={handleImportContacts}>
+                            <BookOpen size={18} /> Importar
+                        </button>
+                    )}
                     <button className="secondary-btn" onClick={() => setShowClienteModal(true)}>
                         <UserPlus size={18} /> Novo Cliente
                     </button>

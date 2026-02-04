@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Users, UserPlus, Phone, Star, Trash2, X, Search, MessageSquare } from 'lucide-react'
+import { Users, UserPlus, Phone, Star, Trash2, X, Search, MessageSquare, BookOpen } from 'lucide-react'
 import './Clientes.css'
 
 function Clientes({ clientes, onAdd, onDelete }) {
@@ -23,13 +23,57 @@ function Clientes({ clientes, onAdd, onDelete }) {
         setFormData({ nome: '', telefone: '', vip: false })
     }
 
+    const handleImportContacts = async () => {
+        const supported = 'contacts' in navigator && 'ContactsManager' in window
+        if (!supported) {
+            alert('A importação de contatos não é suportada neste navegador ou dispositivo. Tente usar no navegador do celular (Chrome/Safari).')
+            return
+        }
+
+        try {
+            const props = ['name', 'tel']
+            const options = { multiple: true }
+            const contacts = await navigator.contacts.select(props, options)
+
+            if (contacts.length > 0) {
+                contacts.forEach(contact => {
+                    const nome = contact.name && contact.name[0] ? contact.name[0] : 'Contato Sem Nome'
+                    const telefone = contact.tel && contact.tel[0] ? contact.tel[0] : ''
+
+                    // Limpar telefone para o formato do sistema (opcional, mas recomendado)
+                    // Remove caracteres não numéricos exceto talvez o +
+                    const telLimpo = telefone.replace(/[^\d+]/g, '')
+
+                    onAdd({
+                        nome,
+                        telefone: telLimpo,
+                        vip: false
+                    })
+                })
+                alert(`${contacts.length} contato(s) importado(s) com sucesso!`)
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                console.error('Erro ao importar contatos:', err)
+                alert('Erro ao acessar contatos. Certifique-se de dar as permissões necessárias.')
+            }
+        }
+    }
+
     return (
         <div className="clientes-page">
             <header className="page-header">
                 <h1>Clientes</h1>
-                <button className="add-btn" onClick={() => setShowModal(true)}>
-                    <UserPlus size={20} /> Novo Cliente
-                </button>
+                <div className="header-actions" style={{ display: 'flex', gap: '10px' }}>
+                    {('contacts' in navigator) && (
+                        <button className="secondary-btn" onClick={handleImportContacts} title="Importar da agenda do celular">
+                            <BookOpen size={20} /> Importar Agenda
+                        </button>
+                    )}
+                    <button className="add-btn" onClick={() => setShowModal(true)}>
+                        <UserPlus size={20} /> Novo Cliente
+                    </button>
+                </div>
             </header>
 
             <div className="filters-bar glass-card">
