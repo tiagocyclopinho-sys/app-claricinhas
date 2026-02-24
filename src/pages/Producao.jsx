@@ -157,9 +157,6 @@ function Producao({ producao, onAdd, onDelete, onUpdate }) {
                                 <span className={`type-badge ${item.tipo === 'Facção própria' ? 'factory' : 'external'}`}>
                                     {item.tipo}
                                 </span>
-                                <button className="delete-card-btn mini-delete" onClick={() => onDelete(item.id)}>
-                                    <Trash2 size={14} />
-                                </button>
                             </div>
                             <div className="product-info">
                                 <div className="p-header">
@@ -172,12 +169,17 @@ function Producao({ producao, onAdd, onDelete, onUpdate }) {
                                         <span className="unit-price">R$ {Number(item.valorUnitario).toFixed(2)} un.</span>
                                         <span className="total-price">R$ {Number(item.valorTotal).toFixed(2)}</span>
                                     </div>
-                                    <button className="add-qty-btn-action" onClick={() => {
-                                        setSelectedItem(item)
-                                        setShowUpdateModal(true)
-                                    }}>
-                                        <Plus size={16} /> Somar
-                                    </button>
+                                    <div className="card-mobile-actions">
+                                        <button className="add-qty-btn-action icon-only" title="Somar Quantidade" onClick={() => {
+                                            setSelectedItem(item)
+                                            setShowUpdateModal(true)
+                                        }}>
+                                            <Plus size={18} />
+                                        </button>
+                                        <button className="delete-card-btn-mobile" title="Excluir Peça" onClick={() => onDelete(item.id)}>
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

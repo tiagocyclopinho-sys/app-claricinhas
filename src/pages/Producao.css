@@ -170,26 +170,49 @@
     gap: 1rem;
 }
 
-.mini-delete {
-    position: absolute;
-    bottom: 0.5rem;
-    right: 0.5rem;
-    background: rgba(255, 107, 107, 0.2);
-    color: #ff6b6b;
+.card-mobile-actions {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.add-qty-btn-action.icon-only {
+    background: var(--secondary);
+    color: white;
     border: none;
-    width: 28px;
-    height: 28px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.delete-card-btn-mobile {
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.2);
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    opacity: 0;
-    transition: all 0.3s;
+    transition: all 0.2s;
 }
 
-.product-card:hover .mini-delete {
-    opacity: 1;
+.add-qty-btn-action.icon-only:hover,
+.delete-card-btn-mobile:hover {
+    transform: scale(1.1);
+}
+
+.delete-card-btn-mobile:active {
+    background: #ff6b6b;
+    color: white;
 }
 
 .p-header {
@@ -207,26 +230,6 @@
     font-weight: 700;
     color: var(--accent);
     border: 1px solid var(--glass-border);
-}
-
-.add-qty-btn-action {
-    background: var(--secondary);
-    color: white;
-    border: none;
-    padding: 0.5rem 0.8rem;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.2s;
-}
-
-.add-qty-btn-action:hover {
-    filter: brightness(1.1);
-    transform: scale(1.05);
 }
 
 .price-info {
