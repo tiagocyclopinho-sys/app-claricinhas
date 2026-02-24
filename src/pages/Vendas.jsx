@@ -28,10 +28,20 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
         vip: false
     })
 
+    const formatDateSafe = (dateStr, formatStr = 'dd/MM/yyyy') => {
+        try {
+            if (!dateStr) return '-'
+            const d = parseISO(dateStr)
+            if (isNaN(d.getTime())) return '-'
+            return format(d, formatStr)
+        } catch { return '-' }
+    }
+
     const filteredVendas = useMemo(() => {
+        if (!vendas || !Array.isArray(vendas)) return []
         if (!filterVip) return vendas
         return vendas.filter(v => {
-            const cliente = clientes.find(c => c.id.toString() === v.clienteId?.toString())
+            const cliente = clientes?.find(c => c.id?.toString() === v.clienteId?.toString())
             return cliente?.vip
         })
     }, [vendas, clientes, filterVip])
@@ -219,7 +229,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                             <div className="venda-main">
                                 <div className="venda-header">
                                     <div className="venda-meta">
-                                        <span className="venda-date">{format(parseISO(venda.dataVenda), 'dd/MM/yyyy')}</span>
+                                        <span className="venda-date">{formatDateSafe(venda.dataVenda)}</span>
                                         <span className="venda-client-tag"> • 👤 {venda.cliente || 'Consumidor'}</span>
                                     </div>
                                     <button className="delete-card-btn" onClick={() => onDeleteVenda(venda.id)}>
@@ -244,7 +254,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                             <div key={idx} className={`parcela-item ${getUrgencyClass(p.vencimento)} ${p.paga ? 'paga' : ''}`}>
                                                 <div className="p-info">
                                                     <span>{idx + 1}ª - R$ {p.valor}</span>
-                                                    <span className="p-date">{format(parseISO(p.vencimento), 'dd/MM/yyyy')}</span>
+                                                    <span className="p-date">{formatDateSafe(p.vencimento)}</span>
                                                 </div>
                                                 {!p.paga && <span className="p-alert">{getUrgencyText(p.vencimento)}</span>}
                                             </div>

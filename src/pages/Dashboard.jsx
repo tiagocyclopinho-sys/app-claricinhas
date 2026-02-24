@@ -14,26 +14,38 @@ function Dashboard({ despesas, vendas, producao, setActivePage }) {
         const start = parseISO(dateRange.start)
         const end = parseISO(dateRange.end)
 
+        const safeParseDate = (dateStr) => {
+            try {
+                if (!dateStr) return null
+                const d = parseISO(dateStr)
+                return isNaN(d.getTime()) ? null : d
+            } catch { return null }
+        }
+
         const filteredDespesas = despesas.filter(d => {
-            const date = parseISO(d.dataVencimento || d.dataCriacao)
-            return isWithinInterval(date, { start, end })
+            const date = safeParseDate(d.dataVencimento || d.dataCriacao)
+            return date && isWithinInterval(date, { start, end })
         })
 
         const filteredVendas = vendas.filter(v => {
-            const date = parseISO(v.dataVenda)
-            return isWithinInterval(date, { start, end })
+            const date = safeParseDate(v.dataVenda)
+            return date && isWithinInterval(date, { start, end })
         })
 
-        const totalDespesas = filteredDespesas.reduce((acc, curr) => acc + Number(curr.valorTotal), 0)
-        const totalVendas = filteredVendas.reduce((acc, curr) => acc + Number(curr.valorTotal), 0)
+        const totalDespesas = filteredDespesas.reduce((acc, curr) => acc + Number(curr.valorTotal || 0), 0)
+        const totalVendas = filteredVendas.reduce((acc, curr) => acc + Number(curr.valorTotal || 0), 0)
 
         // Parcelas a vencer (próximos 7 dias)
-        const alertDate = new Date()
-        alertDate.setDate(alertDate.getDate() + 7)
+        const now = new Date()
+        const alertLimit = new Date()
+        alertLimit.setDate(alertLimit.getDate() + 7)
 
         const parcelasVencendo = vendas.flatMap(v =>
             (v.parcelas || [])
-                .filter(p => !p.paga && isWithinInterval(parseISO(p.vencimento), { start: new Date(), end: alertDate }))
+                .filter(p => {
+                    const d = safeParseDate(p.vencimento)
+                    return d && !p.paga && isWithinInterval(d, { start: now, end: alertLimit })
+                })
                 .map(p => ({ ...p, cliente: v.cliente }))
         )
 
