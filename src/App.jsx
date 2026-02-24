@@ -84,7 +84,8 @@ function App() {
                 ...item,
                 valorTotal: item.valor_total || item.valor || 0,
                 dataVenda: item.data_venda || item.created_at?.split('T')[0],
-                cliente: item.cliente_nome || item.cliente || 'Consumidor'
+                cliente: item.cliente_nome || item.cliente || 'Consumidor',
+                metodoPagamento: item.metodo_pagamento || 'Dinheiro'
             }))
 
             setDespesas(mappedD)

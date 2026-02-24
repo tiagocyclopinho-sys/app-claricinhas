@@ -11,6 +11,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
 
     // Estado para controle de itens na venda atual
     const [itemAdicionando, setItemAdicionando] = useState({ id: '', qtd: 1 })
+    const [searchTermProduct, setSearchTermProduct] = useState('')
 
     // Estados dos formulários
     const [vendaForm, setVendaForm] = useState({
@@ -45,6 +46,16 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
             return cliente?.vip
         })
     }, [vendas, clientes, filterVip])
+
+    const filteredProducao = useMemo(() => {
+        if (!producao) return []
+        const available = producao.filter(p => p.quantidade > 0)
+        if (!searchTermProduct) return available
+        return available.filter(p =>
+            p.nome.toLowerCase().includes(searchTermProduct.toLowerCase()) ||
+            p.tamanho.toLowerCase().includes(searchTermProduct.toLowerCase())
+        )
+    }, [producao, searchTermProduct])
 
     const handleAddCliente = (e) => {
         e.preventDefault()
@@ -350,13 +361,21 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
 
                             <div className="add-item-box glass-card">
                                 <div className="form-group">
-                                    <label>Peça em Estoque</label>
+                                    <label>Pesquisar Peça</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Ex: Saída, Calça, M..."
+                                        value={searchTermProduct}
+                                        onChange={(e) => setSearchTermProduct(e.target.value)}
+                                        className="search-item-input"
+                                    />
+                                    <label style={{ marginTop: '10px' }}>Resultado:</label>
                                     <select
                                         value={itemAdicionando.id}
                                         onChange={(e) => setItemAdicionando({ ...itemAdicionando, id: e.target.value })}
                                     >
                                         <option value="">Escolha a peça...</option>
-                                        {(producao || []).filter(p => p.quantidade > 0).map(p => (
+                                        {filteredProducao.map(p => (
                                             <option key={p.id} value={p.id}>
                                                 {p.nome} ({p.tamanho}) - Qtd: {p.quantidade} - R$ {Number(p.valorUnitario || 0).toFixed(2)}
                                             </option>
@@ -393,13 +412,13 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
 
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label>Valor Total</label>
+                                    <label>Valor Total (Editável)</label>
                                     <input
                                         type="number"
                                         step="0.01"
-                                        readOnly
                                         value={vendaForm.valorTotal}
-                                        style={{ background: 'rgba(255,255,255,0.05)', fontWeight: 'bold' }}
+                                        onChange={(e) => setVendaForm({ ...vendaForm, valorTotal: e.target.value })}
+                                        style={{ background: 'rgba(255,255,255,0.08)', fontWeight: 'bold', color: 'var(--success)' }}
                                     />
                                 </div>
                                 <div className="form-group">

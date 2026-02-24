@@ -226,6 +226,10 @@
     max-width: 650px !important;
 }
 
+.modal-overlay {
+    z-index: 10005 !important;
+}
+
 .form-section-title {
     font-size: 0.9rem;
     font-weight: 600;
@@ -244,6 +248,13 @@
     margin-bottom: 1rem;
     border-radius: var(--radius-md);
     border: 1px solid var(--glass-border);
+    flex-wrap: wrap;
+}
+
+.search-item-input {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid var(--accent) !important;
+    margin-bottom: 5px;
 }
 
 .add-item-btn {
@@ -258,6 +269,7 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .add-item-btn:hover {
@@ -310,4 +322,41 @@
     font-style: italic;
     text-align: center;
     padding: 1.5rem;
+}
+
+@media (max-width: 600px) {
+    .add-item-box {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 1rem !important;
+    }
+
+    .add-item-box .form-group {
+        max-width: 100% !important;
+        margin-bottom: 0.5rem;
+    }
+
+    .add-item-btn {
+        width: 100% !important;
+        margin-top: 10px;
+        height: 48px;
+    }
+
+    .modal-content.wide-modal {
+        width: 100% !important;
+        padding: 1.2rem !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        min-height: 100vh;
+        overflow-y: auto;
+    }
+
+    .modal-overlay {
+        padding: 0 !important;
+        align-items: flex-start !important;
+    }
+
+    .venda-valor {
+        font-size: 1.1rem !important;
+    }
 }
