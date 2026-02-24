@@ -92,31 +92,32 @@ function App() {
             setVendas(mappedV)
             setClientes(c)
 
-            // SALVAR BACKUP LOCAL
-            localStorage.setItem('claricinhas_backup', JSON.stringify({
-                despesas: mappedD,
-                producao: mappedP,
-                vendas: mappedV,
-                clientes: c,
-                lastUpdate: new Date().toISOString()
-            }))
+            // SALVAR BACKUP LOCAL (Com proteção de quota)
+            try {
+                localStorage.setItem('claricinhas_backup', JSON.stringify({
+                    despesas: mappedD,
+                    producao: mappedP,
+                    vendas: mappedV,
+                    clientes: c,
+                    lastUpdate: new Date().toISOString()
+                }))
+            } catch (storageError) {
+                console.warn('Memória local cheia, backup não salvo:', storageError)
+            }
 
         } catch (error) {
-            console.error('Fallback para backup local acionado:', error)
-            setDbError(error.message || 'Erro desconhecido')
+            console.error('Erro na conexão ou processamento:', error)
+            setDbError(error.message || 'Erro de conexão')
 
             const saved = localStorage.getItem('claricinhas_backup')
             if (saved) {
-                const backup = JSON.parse(saved)
-                setDespesas(backup.despesas || [])
-                setProducao(backup.producao || [])
-                setVendas(backup.vendas || [])
-                setClientes(backup.clientes || [])
-
-                // Só alertar se realmente tivermos dados de backup
-                if (backup.vendas || backup.producao) {
-                    console.log('Dados carregados do backup local.')
-                }
+                try {
+                    const backup = JSON.parse(saved)
+                    setDespesas(backup.despesas || [])
+                    setProducao(backup.producao || [])
+                    setVendas(backup.vendas || [])
+                    setClientes(backup.clientes || [])
+                } catch (e) { console.error('Backup corrompido') }
             }
         } finally {
             setLoading(false)
