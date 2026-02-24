@@ -42,27 +42,47 @@ function App() {
         setLoading(true)
         setDbError(false)
         try {
-            const { data: d, error: ed } = await supabase.from('despesas').select('*').order('created_at', { ascending: false })
-            const { data: p, error: ep } = await supabase.from('producao').select('*').order('created_at', { ascending: false })
-            const { data: v, error: ev } = await supabase.from('vendas').select('*').order('created_at', { ascending: false })
-            const { data: c, error: ec } = await supabase.from('clientes').select('*').order('nome')
+            console.log('Iniciando busca de dados...')
+            const queries = [
+                supabase.from('despesas').select('*').order('created_at', { ascending: false }),
+                supabase.from('producao').select('*').order('created_at', { ascending: false }),
+                supabase.from('vendas').select('*').order('created_at', { ascending: false }),
+                supabase.from('clientes').select('*').order('nome')
+            ]
 
-            if (ed || ep || ev || ec) throw new Error('Falha na conexão com Supabase')
+            const [resD, resP, resV, resC] = await Promise.all(queries)
+
+            if (resD.error || resP.error || resV.error || resC.error) {
+                console.error('Erro em uma das queries:', {
+                    despesas: resD.error,
+                    producao: resP.error,
+                    vendas: resV.error,
+                    clientes: resC.error
+                })
+                throw new Error('Erro na conexão com Supabase')
+            }
+
+            const d = resD.data || []
+            const p = resP.data || []
+            const v = resV.data || []
+            const c = resC.data || []
 
             // Mapear e Salvar no Estado
             const mappedD = d.map(item => ({
                 ...item,
-                valorTotal: item.valor_total || item.valor,
+                valorTotal: item.valor_total || item.valor || 0,
                 dataVencimento: item.data_vencimento || item.data_criacao || item.created_at?.split('T')[0]
             }))
+
             const mappedP = p.map(item => ({
                 ...item,
-                valorUnitario: item.valor_unitario,
-                valorTotal: item.valor_total
+                valorUnitario: item.valor_unitario || 0,
+                valorTotal: item.valor_total || 0
             }))
+
             const mappedV = v.map(item => ({
                 ...item,
-                valorTotal: item.valor_total || item.valor,
+                valorTotal: item.valor_total || item.valor || 0,
                 dataVenda: item.data_venda || item.created_at?.split('T')[0],
                 cliente: item.cliente_nome || item.cliente || 'Consumidor'
             }))
@@ -72,7 +92,7 @@ function App() {
             setVendas(mappedV)
             setClientes(c)
 
-            // SALVAR BACKUP LOCAL (Para emergências como a de hoje)
+            // SALVAR BACKUP LOCAL
             localStorage.setItem('claricinhas_backup', JSON.stringify({
                 despesas: mappedD,
                 producao: mappedP,
@@ -82,10 +102,9 @@ function App() {
             }))
 
         } catch (error) {
-            console.error('Erro ao carregar dados, tentando backup local:', error)
+            console.error('Fallback para backup local acionado:', error)
             setDbError(true)
 
-            // Tenta carregar do Backup Local
             const saved = localStorage.getItem('claricinhas_backup')
             if (saved) {
                 const backup = JSON.parse(saved)
@@ -93,7 +112,11 @@ function App() {
                 setProducao(backup.producao || [])
                 setVendas(backup.vendas || [])
                 setClientes(backup.clientes || [])
-                alert('Atenção: Banco de dados fora do ar. Carregando dados do último backup local.')
+
+                // Só alertar se realmente tivermos dados de backup
+                if (backup.vendas || backup.producao) {
+                    console.log('Dados carregados do backup local.')
+                }
             }
         } finally {
             setLoading(false)
