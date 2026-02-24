@@ -53,24 +53,33 @@ function Despesas({ despesas, onAdd, onDelete }) {
         return filteredDespesas.reduce((acc, curr) => acc + Number(curr.valorTotal), 0)
     }, [filteredDespesas])
 
-    const handleSubmit = (e) => {
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        const newDespesa = {
-            ...formData,
-            valorParcela: formData.parcelado ? (Number(formData.valorTotal) / Number(formData.numParcelas)).toFixed(2) : formData.valorTotal
+        setIsSubmitting(true)
+        try {
+            const newDespesa = {
+                ...formData,
+                valorParcela: formData.parcelado ? (Number(formData.valorTotal) / Number(formData.numParcelas)).toFixed(2) : formData.valorTotal
+            }
+            await onAdd(newDespesa)
+            setShowModal(false)
+            setFormData({
+                descricao: '',
+                categoria: 'matéria-prima',
+                valorTotal: '',
+                formaPagamento: 'Dinheiro',
+                parcelado: false,
+                numParcelas: 1,
+                dataVencimento: format(new Date(), 'yyyy-MM-dd'),
+                status: 'Pendente'
+            })
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsSubmitting(false)
         }
-        onAdd(newDespesa)
-        setShowModal(false)
-        setFormData({
-            descricao: '',
-            categoria: 'matéria-prima',
-            valorTotal: '',
-            formaPagamento: 'Dinheiro',
-            parcelado: false,
-            numParcelas: 1,
-            dataVencimento: format(new Date(), 'yyyy-MM-dd'),
-            status: 'Pendente'
-        })
     }
 
     return (
@@ -262,7 +271,9 @@ function Despesas({ despesas, onAdd, onDelete }) {
                                 </select>
                             </div>
 
-                            <button type="submit" className="submit-btn">Salvar Despesa</button>
+                            <button type="submit" className="submit-btn" disabled={isSubmitting}>
+                                {isSubmitting ? 'Salvando...' : 'Salvar Despesa'}
+                            </button>
                         </form>
                     </div>
                 </div>

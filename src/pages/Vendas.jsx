@@ -137,6 +137,8 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
         }
     }
 
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
     const handleAddVenda = async (e) => {
         e.preventDefault()
         if (vendaForm.itensSelecionados.length === 0) {
@@ -144,57 +146,68 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
             return
         }
 
-        const cliente = clientes.find(c => c.id.toString() === vendaForm.clienteId.toString())
+        setIsSubmitting(true)
+        try {
+            const cliente = clientes.find(c => c.id.toString() === vendaForm.clienteId.toString())
 
-        // Gerar parcelas se for crediário ou crédito parcelado
-        let parcelas = []
-        if (vendaForm.metodoPagamento === 'Crediário' || (vendaForm.metodoPagamento === 'Crédito' && Number(vendaForm.numParcelas) > 1)) {
-            const totalParcelas = Number(vendaForm.numParcelas)
-            const valorParcela = (Number(vendaForm.valorTotal) / totalParcelas).toFixed(2)
-            for (let i = 0; i < totalParcelas; i++) {
-                parcelas.push({
-                    id: i,
-                    valor: valorParcela,
-                    vencimento: format(addMonths(parseISO(vendaForm.primeiroVencimento), i), 'yyyy-MM-dd'),
-                    paga: vendaForm.metodoPagamento === 'Crédito'
-                })
+            // Gerar parcelas se for crediário ou crédito parcelado
+            let parcelas = []
+            if (vendaForm.metodoPagamento === 'Crediário' || (vendaForm.metodoPagamento === 'Crédito' && Number(vendaForm.numParcelas) > 1)) {
+                const totalParcelas = Number(vendaForm.numParcelas)
+                const valorParcela = (Number(vendaForm.valorTotal) / totalParcelas).toFixed(2)
+                for (let i = 0; i < totalParcelas; i++) {
+                    parcelas.push({
+                        id: i,
+                        valor: valorParcela,
+                        vencimento: format(addMonths(parseISO(vendaForm.primeiroVencimento), i), 'yyyy-MM-dd'),
+                        paga: vendaForm.metodoPagamento === 'Crédito'
+                    })
+                }
             }
-        }
 
-        // Formatar descrição dos itens
-        const itensDesc = vendaForm.itensSelecionados.map(it => `${it.quantidade}x ${it.nome} (${it.tamanho})`).join(', ')
+            // Formatar descrição dos itens
+            const itensDesc = vendaForm.itensSelecionados.map(it => `${it.quantidade}x ${it.nome} (${it.tamanho})`).join(', ')
 
-        const newVenda = {
-            ...vendaForm,
-            itens: itensDesc,
-            cliente: cliente?.nome || 'Desconhecido',
-            dataVenda: format(new Date(), 'yyyy-MM-dd'),
-            parcelas
-        }
-
-        // Deduzir do estoque
-        for (const item of vendaForm.itensSelecionados) {
-            const itemEstoque = producao.find(p => p.id === item.idProducao)
-            if (itemEstoque) {
-                const novaQtd = itemEstoque.quantidade - item.quantidade
-                const novoValorTotal = (novaQtd * itemEstoque.valorUnitario).toFixed(2)
-                await onUpdateProducao(item.idProducao, {
-                    quantidade: novaQtd,
-                    valor_total: novoValorTotal
-                })
+            const newVenda = {
+                ...vendaForm,
+                itens: itensDesc,
+                cliente: cliente?.nome || 'Desconhecido',
+                dataVenda: format(new Date(), 'yyyy-MM-dd'),
+                parcelas
             }
-        }
 
-        onAddVenda(newVenda)
-        setShowVendaModal(false)
-        setVendaForm({
-            clienteId: '',
-            itensSelecionados: [],
-            valorTotal: 0,
-            metodoPagamento: 'Dinheiro',
-            numParcelas: 1,
-            primeiroVencimento: format(new Date(), 'yyyy-MM-dd')
-        })
+            // Deduzir do estoque em paralelo
+            const updatePromises = vendaForm.itensSelecionados.map(item => {
+                const itemEstoque = producao.find(p => p.id === item.idProducao)
+                if (itemEstoque) {
+                    const novaQtd = itemEstoque.quantidade - item.quantidade
+                    const novoValorTotal = (novaQtd * itemEstoque.valorUnitario).toFixed(2)
+                    return onUpdateProducao(item.idProducao, {
+                        quantidade: novaQtd,
+                        valor_total: novoValorTotal
+                    })
+                }
+                return Promise.resolve()
+            })
+
+            await Promise.all(updatePromises)
+            await onAddVenda(newVenda)
+
+            setShowVendaModal(false)
+            setVendaForm({
+                clienteId: '',
+                itensSelecionados: [],
+                valorTotal: 0,
+                metodoPagamento: 'Dinheiro',
+                numParcelas: 1,
+                primeiroVencimento: format(new Date(), 'yyyy-MM-dd')
+            })
+        } catch (error) {
+            console.error("Erro ao registrar venda:", error)
+            alert("Erro ao registrar venda. Verifique os dados e tente novamente.")
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     const getUrgencyClass = (vencimento) => {
@@ -468,8 +481,13 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                 </div>
                             )}
 
-                            <button type="submit" className="submit-btn" disabled={!vendaForm.clienteId || vendaForm.itensSelecionados.length === 0}>
-                                Registrar Venda
+                            <button type="submit" className="submit-btn" disabled={!vendaForm.clienteId || vendaForm.itensSelecionados.length === 0 || isSubmitting}>
+                                {isSubmitting ? (
+                                    <div className="btn-loading">
+                                        <div className="spinner"></div>
+                                        Registrando...
+                                    </div>
+                                ) : 'Registrar Venda'}
                             </button>
                         </form>
                     </div>

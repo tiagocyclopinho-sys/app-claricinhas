@@ -3,9 +3,14 @@ import { Scissors, Plus, Filter, Search, X, Image as ImageIcon, Trash2 } from 'l
 import { format } from 'date-fns'
 import './Producao.css'
 
-function Producao({ producao, onAdd, onDelete }) {
+function Producao({ producao, onAdd, onDelete, onUpdate }) {
     const [showModal, setShowModal] = useState(false)
+    const [showUpdateModal, setShowUpdateModal] = useState(false)
+    const [selectedItem, setSelectedItem] = useState(null)
+    const [addQty, setAddQty] = useState('')
     const [filterTipo, setFilterTipo] = useState('todos')
+    const [filterTamanho, setFilterTamanho] = useState('todos')
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const [formData, setFormData] = useState({
         nome: '',
@@ -22,30 +27,67 @@ function Producao({ producao, onAdd, onDelete }) {
         if (filterTipo !== 'todos') {
             list = list.filter(p => p.tipo === filterTipo)
         }
+        if (filterTamanho !== 'todos') {
+            list = list.filter(p => p.tamanho === filterTamanho)
+        }
         return list
-    }, [producao, filterTipo])
+    }, [producao, filterTipo, filterTamanho])
 
     const totalCost = useMemo(() => {
         return filteredItems.reduce((acc, curr) => acc + (Number(curr.quantidade) * Number(curr.valorUnitario)), 0)
     }, [filteredItems])
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        const newItem = {
-            ...formData,
-            valorTotal: (Number(formData.quantidade) * Number(formData.valorUnitario)).toFixed(2)
+        setIsSubmitting(true)
+        try {
+            const newItem = {
+                ...formData,
+                valorTotal: (Number(formData.quantidade) * Number(formData.valorUnitario)).toFixed(2)
+            }
+            await onAdd(newItem)
+            setShowModal(false)
+            setFormData({
+                nome: '',
+                tipo: 'Facção própria',
+                quantidade: '',
+                tamanho: 'M',
+                valorUnitario: '',
+                imagem: null,
+                dataCriacao: format(new Date(), 'yyyy-MM-dd')
+            })
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsSubmitting(false)
         }
-        onAdd(newItem)
-        setShowModal(false)
-        setFormData({
-            nome: '',
-            tipo: 'Facção própria',
-            quantidade: '',
-            tamanho: 'M',
-            valorUnitario: '',
-            imagem: null,
-            dataCriacao: format(new Date(), 'yyyy-MM-dd')
-        })
+    }
+
+    const handleUpdateQty = async (e) => {
+        e.preventDefault()
+        if (!selectedItem || !addQty) return
+
+        setIsSubmitting(true)
+        try {
+            const currentQty = Number(selectedItem.quantidade)
+            const addedQty = Number(addQty)
+            const newQty = currentQty + addedQty
+            const unitPrice = Number(selectedItem.valorUnitario)
+            const newTotal = (newQty * unitPrice).toFixed(2)
+
+            await onUpdate(selectedItem.id, {
+                quantidade: newQty,
+                valor_total: newTotal
+            })
+
+            setShowUpdateModal(false)
+            setSelectedItem(null)
+            setAddQty('')
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     const handleImageChange = (e) => {
@@ -59,23 +101,46 @@ function Producao({ producao, onAdd, onDelete }) {
         }
     }
 
+    const uniqueTamanhos = useMemo(() => {
+        const sizes = producao.map(p => p.tamanho)
+        return ['todos', ...new Set(sizes)]
+    }, [producao])
+
     return (
         <div className="producao-page">
             <header className="page-header">
                 <h1>Facção / Compra</h1>
-                <button className="add-btn" onClick={() => setShowModal(true)}>
-                    <Plus size={20} /> Adicionar Item
-                </button>
+                <div className="header-actions">
+                    <button className="secondary-btn" onClick={() => {
+                        setSelectedItem(null)
+                        setShowUpdateModal(true)
+                    }}>
+                        <Plus size={18} /> Somar Qtd
+                    </button>
+                    <button className="add-btn" onClick={() => setShowModal(true)}>
+                        <Plus size={20} /> Adicionar Novo
+                    </button>
+                </div>
             </header>
 
             <div className="filters-bar glass-card">
-                <div className="filter-group">
-                    <label>Tipo:</label>
-                    <select value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)}>
-                        <option value="todos">Todos</option>
-                        <option value="Facção própria">Facção própria</option>
-                        <option value="Compra externa">Compra externa</option>
-                    </select>
+                <div className="filters-row">
+                    <div className="filter-group">
+                        <label>Tipo:</label>
+                        <select value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)}>
+                            <option value="todos">Todos</option>
+                            <option value="Facção própria">Facção própria</option>
+                            <option value="Compra externa">Compra externa</option>
+                        </select>
+                    </div>
+                    <div className="filter-group">
+                        <label>Tamanho:</label>
+                        <select value={filterTamanho} onChange={(e) => setFilterTamanho(e.target.value)}>
+                            {uniqueTamanhos.map(size => (
+                                <option key={size} value={size}>{size === 'todos' ? 'Todos' : size}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
                 <div className="total-badge">
                     <span>Valor em Estoque:</span>
@@ -92,18 +157,27 @@ function Producao({ producao, onAdd, onDelete }) {
                                 <span className={`type-badge ${item.tipo === 'Facção própria' ? 'factory' : 'external'}`}>
                                     {item.tipo}
                                 </span>
+                                <button className="delete-card-btn mini-delete" onClick={() => onDelete(item.id)}>
+                                    <Trash2 size={14} />
+                                </button>
                             </div>
                             <div className="product-info">
                                 <div className="p-header">
                                     <h3>{item.nome}</h3>
-                                    <button className="delete-card-btn" onClick={() => onDelete(item.id)}>
-                                        <Trash2 size={16} />
-                                    </button>
+                                    <span className="size-label">{item.tamanho}</span>
                                 </div>
-                                <p className="product-details">{item.tamanho} • {item.quantidade} unidades</p>
+                                <p className="product-details">{item.quantidade} unidades em estoque</p>
                                 <div className="product-price">
-                                    <span className="unit-price">R$ {Number(item.valorUnitario).toFixed(2)} un.</span>
-                                    <span className="total-price">R$ {Number(item.valorTotal).toFixed(2)}</span>
+                                    <div className="price-info">
+                                        <span className="unit-price">R$ {Number(item.valorUnitario).toFixed(2)} un.</span>
+                                        <span className="total-price">R$ {Number(item.valorTotal).toFixed(2)}</span>
+                                    </div>
+                                    <button className="add-qty-btn-action" onClick={() => {
+                                        setSelectedItem(item)
+                                        setShowUpdateModal(true)
+                                    }}>
+                                        <Plus size={16} /> Somar
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -199,7 +273,67 @@ function Producao({ producao, onAdd, onDelete }) {
                                 Valor em Estoque: <span>R$ {(Number(formData.quantidade || 0) * Number(formData.valorUnitario || 0)).toFixed(2)}</span>
                             </div>
 
-                            <button type="submit" className="submit-btn">Adicionar à Produção</button>
+                            <button type="submit" className="submit-btn" disabled={isSubmitting}>
+                                {isSubmitting ? 'Salvando...' : 'Adicionar à Produção'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {showUpdateModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content glass-card mini-modal">
+                        <div className="modal-header">
+                            <h2>Adicionar Unidades</h2>
+                            <button onClick={() => {
+                                setShowUpdateModal(false)
+                                setSelectedItem(null)
+                                setAddQty('')
+                            }}><X /></button>
+                        </div>
+
+                        <form onSubmit={handleUpdateQty}>
+                            {!selectedItem ? (
+                                <div className="form-group">
+                                    <label>Escolher Peça Existente</label>
+                                    <select
+                                        required
+                                        onChange={(e) => setSelectedItem(producao.find(p => p.id.toString() === e.target.value))}
+                                        value={selectedItem?.id || ''}
+                                    >
+                                        <option value="">Selecione a peça...</option>
+                                        {producao.map(p => (
+                                            <option key={p.id} value={p.id}>{p.nome} ({p.tamanho}) - Atual: {p.quantidade}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            ) : (
+                                <p className="update-item-name">{selectedItem.nome} ({selectedItem.tamanho})</p>
+                            )}
+
+                            <div className="form-group">
+                                <label>Quantidade para somar</label>
+                                <input
+                                    type="number"
+                                    required
+                                    autoFocus
+                                    value={addQty}
+                                    onChange={(e) => setAddQty(e.target.value)}
+                                    placeholder="Ex: 5"
+                                />
+                            </div>
+
+                            {selectedItem && (
+                                <div className="qty-preview-info">
+                                    <p>Atual: <strong>{selectedItem.quantidade}</strong></p>
+                                    <p>Nova: <strong>{Number(selectedItem.quantidade) + Number(addQty || 0)}</strong></p>
+                                </div>
+                            )}
+
+                            <button type="submit" className="submit-btn" disabled={isSubmitting || !selectedItem}>
+                                {isSubmitting ? 'Atualizando...' : 'Confirmar Adição'}
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -207,5 +341,7 @@ function Producao({ producao, onAdd, onDelete }) {
         </div>
     )
 }
+
+
 
 export default Producao

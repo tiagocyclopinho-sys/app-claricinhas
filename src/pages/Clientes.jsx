@@ -17,14 +17,23 @@ function Clientes({ clientes, onAdd, onDelete, onUpdate }) {
         c.telefone.includes(searchTerm)
     )
 
-    const handleSubmit = (e) => {
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        if (editingId) {
-            onUpdate(editingId, formData)
-        } else {
-            onAdd(formData)
+        setIsSubmitting(true)
+        try {
+            if (editingId) {
+                await onUpdate(editingId, formData)
+            } else {
+                await onAdd(formData)
+            }
+            handleCloseModal()
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsSubmitting(false)
         }
-        handleCloseModal()
     }
 
     const handleEdit = (cliente) => {
@@ -206,8 +215,8 @@ function Clientes({ clientes, onAdd, onDelete, onUpdate }) {
                                 />
                                 <label htmlFor="vip-check">Marcar como Cliente VIP</label>
                             </div>
-                            <button type="submit" className="submit-btn">
-                                {editingId ? 'Salvar Alterações' : 'Salvar Cliente'}
+                            <button type="submit" className="submit-btn" disabled={isSubmitting}>
+                                {isSubmitting ? 'Processando...' : (editingId ? 'Salvar Alterações' : 'Salvar Cliente')}
                             </button>
                         </form>
                     </div>
