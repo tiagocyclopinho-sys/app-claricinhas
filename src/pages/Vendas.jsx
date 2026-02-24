@@ -249,8 +249,8 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                 <h3 className="venda-title">{venda.itens || 'Venda sem descrição'}</h3>
 
                                 <div className="venda-footer">
-                                    <span className={`metodo-badge ${venda.metodoPagamento.toLowerCase()}`}>
-                                        {venda.metodoPagamento}
+                                    <span className={`metodo-badge ${(venda.metodoPagamento || 'Outro').toLowerCase()}`}>
+                                        {venda.metodoPagamento || 'Indefinido'}
                                     </span>
                                     <span className="venda-valor">R$ {Number(venda.valorTotal).toFixed(2)}</span>
                                 </div>
@@ -260,7 +260,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                 <div className="parcelas-section">
                                     <h4>Parcelas</h4>
                                     <div className="parcelas-grid">
-                                        {venda.parcelas.map((p, idx) => (
+                                        {(venda.parcelas || []).map((p, idx) => (
                                             <div key={idx} className={`parcela-item ${getUrgencyClass(p.vencimento)} ${p.paga ? 'paga' : ''}`}>
                                                 <div className="p-info">
                                                     <span>{idx + 1}ª - R$ {p.valor}</span>
@@ -339,11 +339,11 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                     onChange={(e) => setVendaForm({ ...vendaForm, clienteId: e.target.value })}
                                 >
                                     <option value="">Selecione um cliente...</option>
-                                    {clientes.map(c => (
+                                    {(clientes || []).map(c => (
                                         <option key={c.id} value={c.id}>{c.nome} {c.vip ? '⭐' : ''}</option>
                                     ))}
                                 </select>
-                                {clientes.length === 0 && <p className="hint">Cadastre um cliente primeiro.</p>}
+                                {(!clientes || clientes.length === 0) && <p className="hint">Cadastre um cliente primeiro.</p>}
                             </div>
 
                             <div className="form-section-title">Itens da Venda</div>
@@ -356,9 +356,9 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                         onChange={(e) => setItemAdicionando({ ...itemAdicionando, id: e.target.value })}
                                     >
                                         <option value="">Escolha a peça...</option>
-                                        {producao.filter(p => p.quantidade > 0).map(p => (
+                                        {(producao || []).filter(p => p.quantidade > 0).map(p => (
                                             <option key={p.id} value={p.id}>
-                                                {p.nome} ({p.tamanho}) - Qtd: {p.quantidade} - R$ {Number(p.valorUnitario).toFixed(2)}
+                                                {p.nome} ({p.tamanho}) - Qtd: {p.quantidade} - R$ {Number(p.valorUnitario || 0).toFixed(2)}
                                             </option>
                                         ))}
                                     </select>
@@ -455,7 +455,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                             <button onClick={() => setShowManageClients(false)}><X /></button>
                         </div>
                         <div className="clients-manage-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                            {clientes.map(c => (
+                            {(clientes || []).map(c => (
                                 <div key={c.id} className="client-manage-item" style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',

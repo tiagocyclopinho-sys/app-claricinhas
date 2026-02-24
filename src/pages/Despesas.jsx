@@ -19,13 +19,27 @@ function Despesas({ despesas, onAdd, onDelete }) {
         status: 'Pendente'
     })
 
+    const formatDateSafe = (dateStr, formatStr = 'dd/MM/yyyy') => {
+        try {
+            if (!dateStr) return '-'
+            const d = parseISO(dateStr)
+            if (isNaN(d.getTime())) return '-'
+            return format(d, formatStr)
+        } catch { return '-' }
+    }
+
     const filteredDespesas = useMemo(() => {
-        let list = despesas
+        let list = despesas || []
 
         if (filterPeriod === 'mes') {
             const start = startOfMonth(new Date())
             const end = endOfMonth(new Date())
-            list = list.filter(d => isWithinInterval(parseISO(d.dataVencimento), { start, end }))
+            list = list.filter(d => {
+                try {
+                    const date = parseISO(d.dataVencimento)
+                    return isWithinInterval(date, { start, end })
+                } catch { return false }
+            })
         }
 
         if (filterMetodo !== 'todos') {
@@ -113,10 +127,10 @@ function Despesas({ despesas, onAdd, onDelete }) {
                                     <td><span className="badge category">{d.categoria}</span></td>
                                     <td>R$ {Number(d.valorTotal).toFixed(2)}</td>
                                     <td>{d.formaPagamento} {d.parcelado && `(${d.numParcelas}x)`}</td>
-                                    <td>{format(parseISO(d.dataVencimento), 'dd/MM/yyyy')}</td>
+                                    <td>{formatDateSafe(d.dataVencimento)}</td>
                                     <td>
-                                        <span className={`badge status ${d.status.toLowerCase()}`}>
-                                            {d.status}
+                                        <span className={`badge status ${(d.status || 'Pendente').toLowerCase()}`}>
+                                            {d.status || 'Indefinido'}
                                         </span>
                                     </td>
                                     <td>

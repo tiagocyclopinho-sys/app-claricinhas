@@ -10,17 +10,17 @@ function Dashboard({ despesas, vendas, producao, setActivePage }) {
         end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
     })
 
+    const safeParseDate = (dateStr) => {
+        try {
+            if (!dateStr) return null
+            const d = parseISO(dateStr)
+            return isNaN(d.getTime()) ? null : d
+        } catch { return null }
+    }
+
     const stats = useMemo(() => {
         const start = parseISO(dateRange.start)
         const end = parseISO(dateRange.end)
-
-        const safeParseDate = (dateStr) => {
-            try {
-                if (!dateStr) return null
-                const d = parseISO(dateStr)
-                return isNaN(d.getTime()) ? null : d
-            } catch { return null }
-        }
 
         const filteredDespesas = despesas.filter(d => {
             const date = safeParseDate(d.dataVencimento || d.dataCriacao)
@@ -116,9 +116,9 @@ function Dashboard({ despesas, vendas, producao, setActivePage }) {
                         {stats.parcelasVencendo.length > 0 ? (
                             stats.parcelasVencendo.map((p, i) => (
                                 <div key={i} className="alert-item">
-                                    <span>{p.cliente}</span>
-                                    <span className="alert-date">Vence em {format(parseISO(p.vencimento), 'dd/MM/yyyy')}</span>
-                                    <span className="alert-value">R$ {Number(p.valor).toFixed(2)}</span>
+                                    <span>{p.cliente || 'Cliente'}</span>
+                                    <span className="alert-date">Vence em {safeParseDate(p.vencimento) ? format(parseISO(p.vencimento), 'dd/MM/yyyy') : '-'}</span>
+                                    <span className="alert-value">R$ {Number(p.valor || 0).toFixed(2)}</span>
                                 </div>
                             ))
                         ) : (
