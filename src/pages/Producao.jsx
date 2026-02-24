@@ -78,7 +78,7 @@ function Producao({ producao, onAdd, onDelete }) {
                     </select>
                 </div>
                 <div className="total-badge">
-                    <span>Custo Total:</span>
+                    <span>Valor em Estoque:</span>
                     <strong>R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                 </div>
             </div>
@@ -196,7 +196,7 @@ function Producao({ producao, onAdd, onDelete }) {
                             </div>
 
                             <div className="cost-preview">
-                                Custo Total Estimado: <span>R$ {(Number(formData.quantidade || 0) * Number(formData.valorUnitario || 0)).toFixed(2)}</span>
+                                Valor em Estoque: <span>R$ {(Number(formData.quantidade || 0) * Number(formData.valorUnitario || 0)).toFixed(2)}</span>
                             </div>
 
                             <button type="submit" className="submit-btn">Adicionar à Produção</button>

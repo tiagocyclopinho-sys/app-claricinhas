@@ -15,6 +15,7 @@ function App() {
     const [vendas, setVendas] = useState([])
     const [clientes, setClientes] = useState([])
     const [loading, setLoading] = useState(true)
+    const [dbError, setDbError] = useState(false)
 
     // Lógica para o botão Voltar do aparelho
     useEffect(() => {
@@ -22,58 +23,78 @@ function App() {
             if (activePage !== 'dashboard') {
                 e.preventDefault()
                 setActivePage('dashboard')
-                // Empurra o estado do dashboard de volta para a história
                 window.history.pushState({ page: 'dashboard' }, '')
             }
         }
-
         window.addEventListener('popstate', handleBackButton)
-
-        // Inicializa o estado da história
         if (window.history.state?.page !== activePage) {
             window.history.pushState({ page: activePage }, '')
         }
-
         return () => window.removeEventListener('popstate', handleBackButton)
     }, [activePage])
 
-    // Carregar dados iniciais do Supabase
+    // Carregar dados iniciais (Tenta Supabase -> Fallback LocalStorage)
     useEffect(() => {
         fetchData()
     }, [])
 
     const fetchData = async () => {
         setLoading(true)
+        setDbError(false)
         try {
-            const { data: d } = await supabase.from('despesas').select('*').order('created_at', { ascending: false })
-            const { data: p } = await supabase.from('producao').select('*').order('created_at', { ascending: false })
-            const { data: v } = await supabase.from('vendas').select('*').order('created_at', { ascending: false })
-            const { data: c } = await supabase.from('clientes').select('*').order('nome')
+            const { data: d, error: ed } = await supabase.from('despesas').select('*').order('created_at', { ascending: false })
+            const { data: p, error: ep } = await supabase.from('producao').select('*').order('created_at', { ascending: false })
+            const { data: v, error: ev } = await supabase.from('vendas').select('*').order('created_at', { ascending: false })
+            const { data: c, error: ec } = await supabase.from('clientes').select('*').order('nome')
 
-            // Ajustar nomes das colunas de snake_case para camelCase (opcional, para não quebrar a UI)
-            if (d) setDespesas(d.map(item => ({
+            if (ed || ep || ev || ec) throw new Error('Falha na conexão com Supabase')
+
+            // Mapear e Salvar no Estado
+            const mappedD = d.map(item => ({
                 ...item,
-                valorTotal: item.valor_total,
-                formaPagamento: item.forma_pagamento,
-                numParcelas: item.num_parcelas,
-                dataVencimento: item.data_vencimento,
-                valorParcela: item.valor_parcela
-            })))
-            if (p) setProducao(p.map(item => ({
+                valorTotal: item.valor_total || item.valor,
+                dataVencimento: item.data_vencimento || item.data_criacao || item.created_at?.split('T')[0]
+            }))
+            const mappedP = p.map(item => ({
                 ...item,
                 valorUnitario: item.valor_unitario,
                 valorTotal: item.valor_total
-            })))
-            if (v) setVendas(v.map(item => ({
+            }))
+            const mappedV = v.map(item => ({
                 ...item,
-                valorTotal: item.valor_total,
-                metodoPagamento: item.metodo_pagamento,
-                numParcelas: item.num_parcelas,
-                dataVenda: item.data_venda
-            })))
-            if (c) setClientes(c)
+                valorTotal: item.valor_total || item.valor,
+                dataVenda: item.data_venda || item.created_at?.split('T')[0],
+                cliente: item.cliente_nome || item.cliente || 'Consumidor'
+            }))
+
+            setDespesas(mappedD)
+            setProducao(mappedP)
+            setVendas(mappedV)
+            setClientes(c)
+
+            // SALVAR BACKUP LOCAL (Para emergências como a de hoje)
+            localStorage.setItem('claricinhas_backup', JSON.stringify({
+                despesas: mappedD,
+                producao: mappedP,
+                vendas: mappedV,
+                clientes: c,
+                lastUpdate: new Date().toISOString()
+            }))
+
         } catch (error) {
-            console.error('Erro ao carregar dados:', error)
+            console.error('Erro ao carregar dados, tentando backup local:', error)
+            setDbError(true)
+
+            // Tenta carregar do Backup Local
+            const saved = localStorage.getItem('claricinhas_backup')
+            if (saved) {
+                const backup = JSON.parse(saved)
+                setDespesas(backup.despesas || [])
+                setProducao(backup.producao || [])
+                setVendas(backup.vendas || [])
+                setClientes(backup.clientes || [])
+                alert('Atenção: Banco de dados fora do ar. Carregando dados do último backup local.')
+            }
         } finally {
             setLoading(false)
         }
@@ -196,6 +217,26 @@ function App() {
         }
     }
 
+    const updateProducao = async (id, novosDados) => {
+        try {
+            // Se for decremento de quantidade, garantir que chamamos com o valor atualizado
+            const { data, error } = await supabase
+                .from('producao')
+                .update(novosDados)
+                .eq('id', id)
+                .select()
+
+            if (error) throw error
+            if (data) {
+                const updated = { ...data[0], valorTotal: data[0].valor_total, valorUnitario: data[0].valor_unitario }
+                setProducao(producao.map(p => p.id === id ? updated : p))
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar produção:', error)
+            alert('Erro ao atualizar estoque: ' + error.message)
+        }
+    }
+
     const deleteProducao = async (id) => {
         if (!window.confirm('Tem certeza que deseja excluir este item da produção?')) return
         try {
@@ -249,8 +290,8 @@ function App() {
         switch (activePage) {
             case 'dashboard': return <Dashboard despesas={despesas} vendas={vendas} producao={producao} setActivePage={setActivePage} />
             case 'despesas': return <Despesas despesas={despesas} onAdd={addDespesa} onDelete={deleteDespesa} />
-            case 'producao': return <Producao producao={producao} onAdd={addProducao} onDelete={deleteProducao} />
-            case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} onDeleteVenda={deleteVenda} clientes={clientes} onAddCliente={addCliente} onDeleteCliente={deleteCliente} onUpdateCliente={updateCliente} />
+            case 'producao': return <Producao producao={producao} onAdd={addProducao} onDelete={deleteProducao} onUpdate={updateProducao} />
+            case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} onDeleteVenda={deleteVenda} clientes={clientes} onAddCliente={addCliente} onDeleteCliente={deleteCliente} onUpdateCliente={updateCliente} producao={producao} onUpdateProducao={updateProducao} />
             case 'clientes': return <Clientes clientes={clientes} onAdd={addCliente} onDelete={deleteCliente} onUpdate={updateCliente} />
             default: return <Dashboard />
         }
@@ -258,6 +299,12 @@ function App() {
 
     return (
         <div className="app-container">
+            {dbError && (
+                <div className="db-error-banner">
+                    ⚠️ Banco de dados off-line. Você está vendo dados salvos localmente (Backup).
+                    <button onClick={fetchData}>Tentar Reconectar</button>
+                </div>
+            )}
             <div className="background-overlay"></div>
             <Sidebar activePage={activePage} setActivePage={setActivePage} />
             <main className="main-content">

@@ -65,7 +65,7 @@ function Dashboard({ despesas, vendas, producao, setActivePage }) {
             </header>
 
             <div className="stats-grid">
-                <div className="stat-card glass-card">
+                <div className="stat-card glass-card clickable" onClick={() => setActivePage('vendas')}>
                     <div className="stat-icon sales">
                         <TrendingUp size={24} />
                     </div>
@@ -75,7 +75,7 @@ function Dashboard({ despesas, vendas, producao, setActivePage }) {
                     </div>
                 </div>
 
-                <div className="stat-card glass-card">
+                <div className="stat-card glass-card clickable" onClick={() => setActivePage('despesas')}>
                     <div className="stat-icon expenses">
                         <Receipt size={24} />
                     </div>
@@ -115,20 +115,6 @@ function Dashboard({ despesas, vendas, producao, setActivePage }) {
                     </div>
                 </section>
 
-                <section className="quick-actions">
-                    <h3>Ações Rápidas</h3>
-                    <div className="actions-grid">
-                        <button onClick={() => setActivePage('despesas')} className="action-btn glass-card">
-                            <Receipt /> Registrar Despesa
-                        </button>
-                        <button onClick={() => setActivePage('producao')} className="action-btn glass-card">
-                            <Scissors /> Nova Produção
-                        </button>
-                        <button onClick={() => setActivePage('vendas')} className="action-btn glass-card">
-                            <ShoppingBag /> Nova Venda
-                        </button>
-                    </div>
-                </section>
             </div>
         </div>
     )

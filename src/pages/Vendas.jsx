@@ -3,17 +3,20 @@ import { ShoppingBag, Plus, UserPlus, Star, Clock, X, Phone, Trash2, BookOpen } 
 import { format, parseISO, differenceInDays, addMonths } from 'date-fns'
 import './Vendas.css'
 
-function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onDeleteCliente }) {
+function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onDeleteCliente, producao, onUpdateProducao }) {
     const [showVendaModal, setShowVendaModal] = useState(false)
     const [showClienteModal, setShowClienteModal] = useState(false)
     const [showManageClients, setShowManageClients] = useState(false)
     const [filterVip, setFilterVip] = useState(false)
 
+    // Estado para controle de itens na venda atual
+    const [itemAdicionando, setItemAdicionando] = useState({ id: '', qtd: 1 })
+
     // Estados dos formulários
     const [vendaForm, setVendaForm] = useState({
         clienteId: '',
-        itens: '',
-        valorTotal: '',
+        itensSelecionados: [], // Array de { idProducao, nome, tamanho, quantidade, valorUnitario }
+        valorTotal: 0,
         metodoPagamento: 'Dinheiro',
         numParcelas: 1,
         primeiroVencimento: format(new Date(), 'yyyy-MM-dd')
@@ -28,7 +31,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
     const filteredVendas = useMemo(() => {
         if (!filterVip) return vendas
         return vendas.filter(v => {
-            const cliente = clientes.find(c => c.id === v.clienteId)
+            const cliente = clientes.find(c => c.id.toString() === v.clienteId?.toString())
             return cliente?.vip
         })
     }, [vendas, clientes, filterVip])
@@ -39,6 +42,42 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
         onAddCliente(newCliente)
         setShowClienteModal(false)
         setClienteForm({ nome: '', telefone: '', vip: false })
+    }
+
+    const handleAddItemAoCarrinho = () => {
+        if (!itemAdicionando.id || itemAdicionando.qtd <= 0) return
+
+        const itemEstoque = producao.find(p => p.id.toString() === itemAdicionando.id.toString())
+        if (!itemEstoque) return
+
+        if (itemAdicionando.qtd > itemEstoque.quantidade) {
+            alert(`Quantidade insuficiente em estoque! Disponível: ${itemEstoque.quantidade}`)
+            return
+        }
+
+        const novoItem = {
+            idProducao: itemEstoque.id,
+            nome: itemEstoque.nome,
+            tamanho: itemEstoque.tamanho,
+            quantidade: Number(itemAdicionando.qtd),
+            valorUnitario: Number(itemEstoque.valorUnitario)
+        }
+
+        const novosItens = [...vendaForm.itensSelecionados, novoItem]
+        const novoTotal = novosItens.reduce((acc, curr) => acc + (curr.quantidade * curr.valorUnitario), 0)
+
+        setVendaForm({
+            ...vendaForm,
+            itensSelecionados: novosItens,
+            valorTotal: novoTotal
+        })
+        setItemAdicionando({ id: '', qtd: 1 })
+    }
+
+    const removerItemCarrinho = (index) => {
+        const novosItens = vendaForm.itensSelecionados.filter((_, i) => i !== index)
+        const novoTotal = novosItens.reduce((acc, curr) => acc + (curr.quantidade * curr.valorUnitario), 0)
+        setVendaForm({ ...vendaForm, itensSelecionados: novosItens, valorTotal: novoTotal })
     }
 
     const handleImportContacts = async () => {
@@ -67,9 +106,14 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
         }
     }
 
-    const handleAddVenda = (e) => {
+    const handleAddVenda = async (e) => {
         e.preventDefault()
-        const cliente = clientes.find(c => c.id === vendaForm.clienteId)
+        if (vendaForm.itensSelecionados.length === 0) {
+            alert('Adicione pelo menos um item à venda!')
+            return
+        }
+
+        const cliente = clientes.find(c => c.id.toString() === vendaForm.clienteId.toString())
 
         // Gerar parcelas se for crediário ou crédito parcelado
         let parcelas = []
@@ -81,24 +125,41 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                     id: i,
                     valor: valorParcela,
                     vencimento: format(addMonths(parseISO(vendaForm.primeiroVencimento), i), 'yyyy-MM-dd'),
-                    paga: vendaForm.metodoPagamento === 'Crédito' // Crédito já é considerado "pago" pelo cliente (recebido pela operadora)
+                    paga: vendaForm.metodoPagamento === 'Crédito'
                 })
             }
         }
 
+        // Formatar descrição dos itens
+        const itensDesc = vendaForm.itensSelecionados.map(it => `${it.quantidade}x ${it.nome} (${it.tamanho})`).join(', ')
+
         const newVenda = {
             ...vendaForm,
+            itens: itensDesc,
             cliente: cliente?.nome || 'Desconhecido',
             dataVenda: format(new Date(), 'yyyy-MM-dd'),
             parcelas
+        }
+
+        // Deduzir do estoque
+        for (const item of vendaForm.itensSelecionados) {
+            const itemEstoque = producao.find(p => p.id === item.idProducao)
+            if (itemEstoque) {
+                const novaQtd = itemEstoque.quantidade - item.quantidade
+                const novoValorTotal = (novaQtd * itemEstoque.valorUnitario).toFixed(2)
+                await onUpdateProducao(item.idProducao, {
+                    quantidade: novaQtd,
+                    valor_total: novoValorTotal
+                })
+            }
         }
 
         onAddVenda(newVenda)
         setShowVendaModal(false)
         setVendaForm({
             clienteId: '',
-            itens: '',
-            valorTotal: '',
+            itensSelecionados: [],
+            valorTotal: 0,
             metodoPagamento: 'Dinheiro',
             numParcelas: 1,
             primeiroVencimento: format(new Date(), 'yyyy-MM-dd')
@@ -157,15 +218,16 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                         <div key={venda.id} className="venda-card glass-card">
                             <div className="venda-main">
                                 <div className="venda-header">
-                                    <h3>{venda.cliente} {clientes.find(c => c.id === venda.clienteId)?.vip && <Star size={14} className="vip-icon" fill="var(--accent)" color="var(--accent)" />}</h3>
-                                    <div className="v-actions">
+                                    <div className="venda-meta">
                                         <span className="venda-date">{format(parseISO(venda.dataVenda), 'dd/MM/yyyy')}</span>
-                                        <button className="delete-card-btn" onClick={() => onDeleteVenda(venda.id)}>
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <span className="venda-client-tag"> • 👤 {venda.cliente || 'Consumidor'}</span>
                                     </div>
+                                    <button className="delete-card-btn" onClick={() => onDeleteVenda(venda.id)}>
+                                        <Trash2 size={16} />
+                                    </button>
                                 </div>
-                                <p className="venda-itens">{venda.itens}</p>
+                                <h3 className="venda-title">{venda.itens || 'Venda sem descrição'}</h3>
+
                                 <div className="venda-footer">
                                     <span className={`metodo-badge ${venda.metodoPagamento.toLowerCase()}`}>
                                         {venda.metodoPagamento}
@@ -182,7 +244,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                             <div key={idx} className={`parcela-item ${getUrgencyClass(p.vencimento)} ${p.paga ? 'paga' : ''}`}>
                                                 <div className="p-info">
                                                     <span>{idx + 1}ª - R$ {p.valor}</span>
-                                                    <span className="p-date">{format(parseISO(p.vencimento), 'dd/MM/px')}</span>
+                                                    <span className="p-date">{format(parseISO(p.vencimento), 'dd/MM/yyyy')}</span>
                                                 </div>
                                                 {!p.paga && <span className="p-alert">{getUrgencyText(p.vencimento)}</span>}
                                             </div>
@@ -243,7 +305,7 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
             {/* Modal Nova Venda */}
             {showVendaModal && (
                 <div className="modal-overlay">
-                    <div className="modal-content glass-card">
+                    <div className="modal-content glass-card wide-modal">
                         <div className="modal-header">
                             <h2>Registrar Nova Venda</h2>
                             <button onClick={() => setShowVendaModal(false)}><X /></button>
@@ -264,14 +326,49 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                 {clientes.length === 0 && <p className="hint">Cadastre um cliente primeiro.</p>}
                             </div>
 
-                            <div className="form-group">
-                                <label>O que foi vendido?</label>
-                                <textarea
-                                    rows="2"
-                                    value={vendaForm.itens}
-                                    onChange={(e) => setVendaForm({ ...vendaForm, itens: e.target.value })}
-                                    placeholder="Ex: 2 Blusas M, 1 Calça P"
-                                />
+                            <div className="form-section-title">Itens da Venda</div>
+
+                            <div className="add-item-box glass-card">
+                                <div className="form-group">
+                                    <label>Peça em Estoque</label>
+                                    <select
+                                        value={itemAdicionando.id}
+                                        onChange={(e) => setItemAdicionando({ ...itemAdicionando, id: e.target.value })}
+                                    >
+                                        <option value="">Escolha a peça...</option>
+                                        {producao.filter(p => p.quantidade > 0).map(p => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.nome} ({p.tamanho}) - Qtd: {p.quantidade} - R$ {Number(p.valorUnitario).toFixed(2)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="form-group" style={{ maxWidth: '80px' }}>
+                                    <label>Qtd</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={itemAdicionando.qtd}
+                                        onChange={(e) => setItemAdicionando({ ...itemAdicionando, qtd: e.target.value })}
+                                    />
+                                </div>
+                                <button type="button" className="add-item-btn" onClick={handleAddItemAoCarrinho}>
+                                    <Plus size={18} />
+                                </button>
+                            </div>
+
+                            <div className="selected-items-list">
+                                {vendaForm.itensSelecionados.length > 0 ? (
+                                    vendaForm.itensSelecionados.map((item, idx) => (
+                                        <div key={idx} className="selected-item">
+                                            <span>{item.quantidade}x {item.nome} ({item.tamanho})</span>
+                                            <span>R$ {(item.quantidade * item.valorUnitario).toFixed(2)}</span>
+                                            <button type="button" onClick={() => removerItemCarrinho(idx)}><Trash2 size={14} /></button>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="empty-hint">Nenhum item selecionado</p>
+                                )}
                             </div>
 
                             <div className="form-row">
@@ -280,9 +377,9 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                     <input
                                         type="number"
                                         step="0.01"
-                                        required
+                                        readOnly
                                         value={vendaForm.valorTotal}
-                                        onChange={(e) => setVendaForm({ ...vendaForm, valorTotal: e.target.value })}
+                                        style={{ background: 'rgba(255,255,255,0.05)', fontWeight: 'bold' }}
                                     />
                                 </div>
                                 <div className="form-group">
@@ -322,7 +419,9 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
                                 </div>
                             )}
 
-                            <button type="submit" className="submit-btn" disabled={!vendaForm.clienteId}>Registrar Venda</button>
+                            <button type="submit" className="submit-btn" disabled={!vendaForm.clienteId || vendaForm.itensSelecionados.length === 0}>
+                                Registrar Venda
+                            </button>
                         </form>
                     </div>
                 </div>
