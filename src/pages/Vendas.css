@@ -228,6 +228,9 @@
 
 .modal-overlay {
     z-index: 10005 !important;
+    overflow-y: auto !important;
+    /* Habilita o scroll no overlay */
+    -webkit-overflow-scrolling: touch;
 }
 
 .form-section-title {
@@ -348,12 +351,20 @@
         margin: 0 !important;
         border-radius: 0 !important;
         min-height: 100vh;
-        overflow-y: auto;
+        overflow-y: visible !important;
+        /* Deixa o scroll pro overlay */
+        background: var(--bg-dark) !important;
+    }
+
+    /* Espaço extra no final do form para o teclado não cobrir os campos */
+    .modal-content.wide-modal form {
+        padding-bottom: 250px;
     }
 
     .modal-overlay {
         padding: 0 !important;
         align-items: flex-start !important;
+        background: var(--bg-dark) !important;
     }
 
     .venda-valor {

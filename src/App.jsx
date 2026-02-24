@@ -142,7 +142,12 @@ function App() {
             const { data, error } = await supabase.from('despesas').insert([dbItem]).select()
             if (error) throw error
             if (data) {
-                const mapped = { ...data[0], valorTotal: data[0].valor_total, dataVencimento: data[0].data_vencimento }
+                const mapped = {
+                    ...data[0],
+                    valorTotal: data[0].valor_total,
+                    dataVencimento: data[0].data_vencimento,
+                    formaPagamento: data[0].forma_pagamento
+                }
                 setDespesas([mapped, ...despesas])
                 alert('Despesa salva com sucesso!')
             }
@@ -190,7 +195,13 @@ function App() {
             const { data, error } = await supabase.from('vendas').insert([dbItem]).select()
             if (error) throw error
             if (data) {
-                const mapped = { ...data[0], valorTotal: data[0].valor_total, dataVenda: data[0].data_venda, cliente: data[0].cliente_nome }
+                const mapped = {
+                    ...data[0],
+                    valorTotal: data[0].valor_total,
+                    dataVenda: data[0].data_venda,
+                    cliente: data[0].cliente_nome,
+                    metodoPagamento: data[0].metodo_pagamento
+                }
                 setVendas([mapped, ...vendas])
                 alert('Venda registrada com sucesso!')
             }

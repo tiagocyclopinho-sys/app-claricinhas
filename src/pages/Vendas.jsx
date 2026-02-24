@@ -13,6 +13,16 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
     const [itemAdicionando, setItemAdicionando] = useState({ id: '', qtd: 1 })
     const [searchTermProduct, setSearchTermProduct] = useState('')
 
+    // Efeito para impedir scroll do fundo quando modal abrir
+    React.useEffect(() => {
+        if (showVendaModal || showClienteModal || showManageClients) {
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = 'unset'
+        }
+        return () => { document.body.style.overflow = 'unset' }
+    }, [showVendaModal, showClienteModal, showManageClients])
+
     // Estados dos formulários
     const [vendaForm, setVendaForm] = useState({
         clienteId: '',
