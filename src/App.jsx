@@ -15,7 +15,7 @@ function App() {
     const [vendas, setVendas] = useState([])
     const [clientes, setClientes] = useState([])
     const [loading, setLoading] = useState(true)
-    const [dbError, setDbError] = useState(false)
+    const [dbError, setDbError] = useState(null) // Guardar a mensagem de erro
 
     // Lógica para o botão Voltar do aparelho
     useEffect(() => {
@@ -40,7 +40,7 @@ function App() {
 
     const fetchData = async () => {
         setLoading(true)
-        setDbError(false)
+        setDbError(null)
         try {
             console.log('Iniciando busca de dados...')
             const queries = [
@@ -103,7 +103,7 @@ function App() {
 
         } catch (error) {
             console.error('Fallback para backup local acionado:', error)
-            setDbError(true)
+            setDbError(error.message || 'Erro desconhecido')
 
             const saved = localStorage.getItem('claricinhas_backup')
             if (saved) {
@@ -324,8 +324,9 @@ function App() {
         <div className="app-container">
             {dbError && (
                 <div className="db-error-banner">
-                    ⚠️ Banco de dados off-line. Você está vendo dados salvos localmente (Backup).
+                    <span>⚠️ {dbError === true ? 'Banco Offline' : `Erro: ${dbError}`}</span>
                     <button onClick={fetchData}>Tentar Reconectar</button>
+                    <button onClick={() => setDbError(null)} style={{ background: 'transparent', color: 'white', border: '1px solid white', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
                 </div>
             )}
             <div className="background-overlay"></div>

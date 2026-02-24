@@ -177,18 +177,28 @@ function Vendas({ vendas, onAddVenda, onDeleteVenda, clientes, onAddCliente, onD
     }
 
     const getUrgencyClass = (vencimento) => {
-        const diff = differenceInDays(parseISO(vencimento), new Date())
-        if (diff < 0) return 'overdue'
-        if (diff <= 3) return 'urgent'
-        return 'normal'
+        try {
+            if (!vencimento) return 'normal'
+            const d = parseISO(vencimento)
+            if (isNaN(d.getTime())) return 'normal'
+            const diff = differenceInDays(d, new Date())
+            if (diff < 0) return 'overdue'
+            if (diff <= 3) return 'urgent'
+            return 'normal'
+        } catch { return 'normal' }
     }
 
     const getUrgencyText = (vencimento) => {
-        const diff = differenceInDays(parseISO(vencimento), new Date())
-        if (diff < 0) return `Atrasado ${Math.abs(diff)}d`
-        if (diff === 0) return 'Vence HOJE'
-        if (diff <= 3) return `Vence em ${diff}d`
-        return null
+        try {
+            if (!vencimento) return null
+            const d = parseISO(vencimento)
+            if (isNaN(d.getTime())) return null
+            const diff = differenceInDays(d, new Date())
+            if (diff < 0) return `Atrasado ${Math.abs(diff)}d`
+            if (diff === 0) return 'Vence HOJE'
+            if (diff <= 3) return `Vence em ${diff}d`
+            return null
+        } catch { return null }
     }
 
     return (
