@@ -38,28 +38,35 @@ function App() {
         fetchData()
     }, [])
 
-    const fetchData = async () => {
+    const fetchData = async (retryCount = 0) => {
         setLoading(true)
         setDbError(null)
         try {
-            console.log('Iniciando busca de dados...')
-            const queries = [
-                supabase.from('despesas').select('*').order('created_at', { ascending: false }),
-                supabase.from('producao').select('*').order('created_at', { ascending: false }),
-                supabase.from('vendas').select('*').order('created_at', { ascending: false }),
-                supabase.from('clientes').select('*').order('nome')
-            ]
+            console.log(`Iniciando busca de dados (Tentativa ${retryCount + 1})...`)
 
-            const [resD, resP, resV, resC] = await Promise.all(queries)
+            // Cada query agora é tratada individualmente para saber qual falhou
+            const resD = await supabase.from('despesas').select('*').order('created_at', { ascending: false })
+            const resP = await supabase.from('producao').select('*').order('created_at', { ascending: false })
+            const resV = await supabase.from('vendas').select('*').order('created_at', { ascending: false })
+            const resC = await supabase.from('clientes').select('*').order('nome')
 
-            if (resD.error || resP.error || resV.error || resC.error) {
-                console.error('Erro em uma das queries:', {
-                    despesas: resD.error,
-                    producao: resP.error,
-                    vendas: resV.error,
-                    clientes: resC.error
-                })
-                throw new Error('Erro na conexão com Supabase')
+            const errors = []
+            if (resD.error) errors.push(`Despesas: ${resD.error.message}`)
+            if (resP.error) errors.push(`Produção: ${resP.error.message}`)
+            if (resV.error) errors.push(`Vendas: ${resV.error.message}`)
+            if (resC.error) errors.push(`Clientes: ${resC.error.message}`)
+
+            if (errors.length > 0) {
+                console.error('Erros no Supabase:', errors)
+
+                // Se for um erro temporário e tivermos poucas tentativas, tenta de novo em 3 segundos
+                if (retryCount < 2) {
+                    console.log('Tentando reconectar automaticamente em 3s...')
+                    setTimeout(() => fetchData(retryCount + 1), 3000)
+                    return
+                }
+
+                throw new Error(errors.join(' | '))
             }
 
             const d = resD.data || []
@@ -105,10 +112,12 @@ function App() {
             } catch (storageError) {
                 console.warn('Memória local cheia, backup não salvo:', storageError)
             }
+            setLoading(false)
 
         } catch (error) {
-            console.error('Erro na conexão ou processamento:', error)
-            setDbError(error.message || 'Erro de conexão')
+            console.error('Erro Final no Processamento:', error)
+            setDbError(error.message || 'Falha na conexão')
+            setLoading(false) // Garante que sai do loading se der erro final
 
             const saved = localStorage.getItem('claricinhas_backup')
             if (saved) {
@@ -120,8 +129,6 @@ function App() {
                     setClientes(backup.clientes || [])
                 } catch (e) { console.error('Backup corrompido') }
             }
-        } finally {
-            setLoading(false)
         }
     }
 

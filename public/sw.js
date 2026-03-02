@@ -1,3 +1,4 @@
+/** Version: 1.0.1 (Force update) **/
 self.addEventListener('install', (event) => {
     self.skipWaiting();
 });

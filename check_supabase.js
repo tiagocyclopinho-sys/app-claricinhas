@@ -10,22 +10,18 @@ async function checkData() {
     const tables = ['despesas', 'producao', 'vendas', 'clientes'];
 
     for (const table of tables) {
-        const { data, error, count } = await supabase
-            .from(table)
-            .select('*', { count: 'exact', head: true });
+        try {
+            const { data, error, count } = await supabase
+                .from(table)
+                .select('*', { count: 'exact', head: true });
 
-        if (error) {
-            console.error(`Error checking table ${table}:`, error.message);
-        } else {
-            console.log(`Table ${table}: ${count} rows`);
-
-            // Fetch one row to see if it exists
-            const { data: rows } = await supabase.from(table).select('*').limit(1);
-            if (rows && rows.length > 0) {
-                console.log(`  Sample data found in ${table}`);
+            if (error) {
+                console.error(`Error checking table ${table}:`, error.message, error.details || '', error.hint || '');
             } else {
-                console.log(`  No data found in ${table}`);
+                console.log(`Table ${table}: ${count} rows`);
             }
+        } catch (e) {
+            console.error(`Exception checking table ${table}:`, e.message);
         }
     }
 }
