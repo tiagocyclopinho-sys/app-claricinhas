@@ -78,6 +78,7 @@ function App() {
             {
                 name: 'despesas',
                 setter: setDespesas,
+                select: '*',
                 mapper: data => data.map(item => ({
                     ...item,
                     valorTotal: item.valor_total || item.valor || 0,
@@ -87,6 +88,7 @@ function App() {
             {
                 name: 'producao',
                 setter: setProducao,
+                select: 'id, created_at, nome, tipo, quantidade, tamanho, valor_unitario, valor_total',
                 mapper: data => data.map(item => ({
                     ...item,
                     valorUnitario: item.valor_unitario || 0,
@@ -96,6 +98,7 @@ function App() {
             {
                 name: 'vendas',
                 setter: setVendas,
+                select: '*',
                 mapper: data => data.map(item => ({
                     ...item,
                     valorTotal: item.valor_total || item.valor || 0,
@@ -107,6 +110,7 @@ function App() {
             {
                 name: 'clientes',
                 setter: setClientes,
+                select: '*',
                 mapper: data => data
             }
         ];
@@ -114,8 +118,7 @@ function App() {
         // Processa cada tabela individualmente
         const promises = tables.map(async (t) => {
             try {
-                // Tenta buscar sem ordenação complexa para garantir velocidade
-                const { data, error } = await supabase.from(t.name).select('*');
+                const { data, error } = await supabase.from(t.name).select(t.select);
 
                 if (error) {
                     console.error(`[FetchData] Erro em ${t.name}:`, error.message);
@@ -141,6 +144,9 @@ function App() {
         if (syncCount > 0) {
             setLoading(false);
             setLastSync(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+
+            // Inicia carga de imagens em segundo plano
+            fetchImages();
 
             // Salva backup atualizado
             try {
@@ -177,6 +183,23 @@ function App() {
             } catch (e) { console.error('Erro ao ler backup manual:', e); }
         }
         return false;
+    };
+
+    const fetchImages = async () => {
+        console.log('[FetchImages] Iniciando carga de imagens em background...');
+        try {
+            const { data, error } = await supabase.from('producao').select('id, imagem');
+            if (error) throw error;
+            if (data) {
+                setProducao(prev => prev.map(item => {
+                    const imgData = data.find(d => d.id === item.id);
+                    return imgData ? { ...item, imagem: imgData.imagem } : item;
+                }));
+                console.log('[FetchImages] Imagens carregadas com sucesso.');
+            }
+        } catch (err) {
+            console.warn('[FetchImages] Falha ao carregar imagens:', err.message);
+        }
     };
 
     // Funções de atualização que salvam no Supabase
