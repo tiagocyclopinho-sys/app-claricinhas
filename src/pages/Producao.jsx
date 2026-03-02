@@ -11,6 +11,8 @@ function Producao({ producao, onAdd, onDelete, onUpdate }) {
     const [filterTipo, setFilterTipo] = useState('todos')
     const [filterTamanho, setFilterTamanho] = useState('todos')
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [visibleCount, setVisibleCount] = useState(8) // Paginação inicial (Carregar 8 por vez)
+    const [zoomImage, setZoomImage] = useState(null) // Estado para imagem ampliada
 
     const [formData, setFormData] = useState({
         nome: '',
@@ -143,20 +145,21 @@ function Producao({ producao, onAdd, onDelete, onUpdate }) {
                     </div>
                 </div>
                 <div className="total-badge">
-                    <span>Valor em Estoque:</span>
+                    <span>Peças: <strong>{filteredItems.length}</strong> | Estoque:</span>
                     <strong>R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                 </div>
             </div>
 
             <div className="items-grid">
-                {filteredItems.length > 0 ? (
-                    filteredItems.map(item => (
+                {filteredItems.slice(0, visibleCount).length > 0 ? (
+                    filteredItems.slice(0, visibleCount).map(item => (
                         <div key={item.id} className="product-card glass-card">
-                            <div className="product-img">
-                                {item.imagem ? <img src={item.imagem} alt={item.nome} /> : <div className="img-placeholder"><ImageIcon size={40} /></div>}
+                            <div className="product-img" onClick={() => item.imagem && setZoomImage(item.imagem)}>
+                                {item.imagem ? <img src={item.imagem} alt={item.nome} loading="lazy" /> : <div className="img-placeholder"><ImageIcon size={40} /></div>}
                                 <span className={`type-badge ${item.tipo === 'Facção própria' ? 'factory' : 'external'}`}>
                                     {item.tipo}
                                 </span>
+                                {item.imagem && <div className="zoom-hint"><Search size={16} /> Ver Foto</div>}
                             </div>
                             <div className="product-info">
                                 <div className="p-header">
@@ -188,6 +191,24 @@ function Producao({ producao, onAdd, onDelete, onUpdate }) {
                     <p className="empty-msg">Nenhum item em produção.</p>
                 )}
             </div>
+
+            {filteredItems.length > visibleCount && (
+                <div className="load-more-container">
+                    <button className="secondary-btn load-more-btn" onClick={() => setVisibleCount(visibleCount + 8)}>
+                        Carregar mais itens (+8)
+                    </button>
+                </div>
+            )}
+
+            {/* Modal de Zoom da Imagem */}
+            {zoomImage && (
+                <div className="zoom-modal-overlay" onClick={() => setZoomImage(null)}>
+                    <div className="zoom-modal-content" onClick={e => e.stopPropagation()}>
+                        <button className="close-zoom" onClick={() => setZoomImage(null)}><X size={30} /></button>
+                        <img src={zoomImage} alt="Visualização ampliada" className="zoom-img-large" />
+                    </div>
+                </div>
+            )}
 
             {showModal && (
                 <div className="modal-overlay">

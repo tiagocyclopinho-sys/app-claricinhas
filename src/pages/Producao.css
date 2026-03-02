@@ -19,9 +19,97 @@
 }
 
 .product-img {
-    height: 200px;
+    height: 180px;
     position: relative;
+    overflow: hidden;
+    cursor: pointer;
     background: rgba(255, 255, 255, 0.02);
+}
+
+.product-img:hover .zoom-hint {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.zoom-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+}
+
+/* Modal de Zoom */
+.zoom-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease;
+}
+
+.zoom-modal-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+}
+
+.zoom-img-large {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 12px;
+    object-fit: contain;
+    box-shadow: 0 0 50px rgba(255, 107, 107, 0.2);
+    animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.close-zoom {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: transparent;
+    color: white;
+    font-size: 1.5rem;
+    padding: 10px;
+}
+
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    padding: 2rem 0;
+}
+
+.load-more-btn {
+    padding: 0.8rem 2.5rem;
+    border-radius: 30px;
+    font-weight: 600;
+}
+
+@keyframes zoomIn {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .product-img img {
