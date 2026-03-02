@@ -41,10 +41,10 @@ function App() {
     const fetchData = async (retryCount = 0) => {
         setLoading(true)
         setDbError(null)
-        try {
-            console.log(`Iniciando busca de dados (Tentativa ${retryCount + 1})...`)
+        console.log(`[FetchData] Iniciando tentativa ${retryCount + 1}`)
 
-            // 🚀 MUITO MAIS RÁPIDO: Busca tudo em paralelo para evitar timeouts
+        try {
+            // 🚀 Busca paralela para máxima performance
             const [resD, resP, resV, resC] = await Promise.all([
                 supabase.from('despesas').select('*').order('created_at', { ascending: false }),
                 supabase.from('producao').select('*').order('created_at', { ascending: false }),
@@ -59,28 +59,27 @@ function App() {
             if (resC.error) errors.push(`Clientes: ${resC.error.message}`)
 
             if (errors.length > 0) {
-                console.warn('Erros temporários no Supabase:', errors)
-
-                // Se houver erro, tentamos de novo 3 vezes
+                console.warn('[FetchData] Erros detectados:', errors)
                 if (retryCount < 2) {
-                    console.log('Tentando reconexão rápida em 2s...')
+                    console.log('[FetchData] Agendando nova tentativa em 2s...')
                     setTimeout(() => fetchData(retryCount + 1), 2000)
-                    return
+                    return // Sai sem desativar o Loading, a próxima tentativa cuidará disso
                 }
-
                 throw new Error(errors.join(' | '))
             }
+
+            console.log('[FetchData] Dados recebidos com sucesso. Mapeando...')
 
             const d = resD.data || []
             const p = resP.data || []
             const v = resV.data || []
             const c = resC.data || []
 
-            // Mapear e Salvar no Estado
+            // Mapeamentos seguros
             const mappedD = d.map(item => ({
                 ...item,
                 valorTotal: item.valor_total || item.valor || 0,
-                dataVencimento: item.data_vencimento || item.data_criacao || item.created_at?.split('T')[0]
+                dataVencimento: item.data_vencimento || (item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0])
             }))
 
             const mappedP = p.map(item => ({
@@ -92,7 +91,7 @@ function App() {
             const mappedV = v.map(item => ({
                 ...item,
                 valorTotal: item.valor_total || item.valor || 0,
-                dataVenda: item.data_venda || item.created_at?.split('T')[0],
+                dataVenda: item.data_venda || (item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
                 cliente: item.cliente_nome || item.cliente || 'Consumidor',
                 metodoPagamento: item.metodo_pagamento || 'Dinheiro'
             }))
@@ -102,35 +101,35 @@ function App() {
             setVendas(mappedV)
             setClientes(c)
 
-            // SALVAR BACKUP LOCAL (Com proteção de quota)
+            // Backup silencioso
             try {
                 localStorage.setItem('claricinhas_backup', JSON.stringify({
-                    despesas: mappedD,
-                    producao: mappedP,
-                    vendas: mappedV,
-                    clientes: c,
-                    lastUpdate: new Date().toISOString()
+                    despesas: mappedD, producao: mappedP, vendas: mappedV, clientes: c, lastUpdate: new Date().toISOString()
                 }))
-            } catch (storageError) {
-                console.warn('Memória local cheia, backup não salvo:', storageError)
-            }
+            } catch (e) { console.warn('Falha no backup local:', e) }
+
+            console.log('[FetchData] Sucesso total.')
             setLoading(false)
 
         } catch (error) {
-            console.error('Erro Final no Processamento:', error)
+            console.error('[FetchData] Erro Crítico:', error)
             setDbError(error.message || 'Falha na conexão')
-            setLoading(false) // Garante que sai do loading se der erro final
 
+            // Tenta carregar backup se o banco falhou de vez
             const saved = localStorage.getItem('claricinhas_backup')
             if (saved) {
                 try {
+                    console.log('[FetchData] Carregando dados do backup local...')
                     const backup = JSON.parse(saved)
                     setDespesas(backup.despesas || [])
                     setProducao(backup.producao || [])
                     setVendas(backup.vendas || [])
                     setClientes(backup.clientes || [])
-                } catch (e) { console.error('Backup corrompido') }
+                } catch (e) {
+                    console.error('[FetchData] Backup corrompido:', e)
+                }
             }
+            setLoading(false)
         }
     }
 
