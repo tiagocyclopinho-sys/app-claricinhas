@@ -145,8 +145,9 @@ function App() {
             setLoading(false);
             setLastSync(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
 
-            // Inicia carga de imagens em segundo plano
-            fetchImages();
+            // Inicia carga de imagens em segundo plano, uma por uma
+            const prodData = results.find(r => r?.name === 'producao')?.data || [];
+            if (prodData.length > 0) fetchImages(prodData);
 
             // Salva backup atualizado
             try {
@@ -185,21 +186,27 @@ function App() {
         return false;
     };
 
-    const fetchImages = async () => {
-        console.log('[FetchImages] Iniciando carga de imagens em background...');
-        try {
-            const { data, error } = await supabase.from('producao').select('id, imagem');
-            if (error) throw error;
-            if (data) {
-                setProducao(prev => prev.map(item => {
-                    const imgData = data.find(d => d.id === item.id);
-                    return imgData ? { ...item, imagem: imgData.imagem } : item;
-                }));
-                console.log('[FetchImages] Imagens carregadas com sucesso.');
+    const fetchImages = async (items) => {
+        console.log(`[FetchImages] Carregando ${items.length} imagens individualmente...`);
+        for (const item of items) {
+            try {
+                const { data, error } = await supabase
+                    .from('producao')
+                    .select('imagem')
+                    .eq('id', item.id)
+                    .single();
+
+                if (error) throw error;
+                if (data?.imagem) {
+                    setProducao(prev => prev.map(p =>
+                        p.id === item.id ? { ...p, imagem: data.imagem } : p
+                    ));
+                }
+            } catch (err) {
+                console.warn(`[FetchImages] Erro na imagem ${item.id}:`, err.message);
             }
-        } catch (err) {
-            console.warn('[FetchImages] Falha ao carregar imagens:', err.message);
         }
+        console.log('[FetchImages] Ciclo de carga finalizado.');
     };
 
     // Funções de atualização que salvam no Supabase
