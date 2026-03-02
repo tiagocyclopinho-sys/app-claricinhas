@@ -33,9 +33,25 @@ function App() {
         return () => window.removeEventListener('popstate', handleBackButton)
     }, [activePage])
 
+    const [showBypass, setShowBypass] = useState(false)
+
     // Carregar dados iniciais (Tenta Supabase -> Fallback LocalStorage)
     useEffect(() => {
         fetchData()
+
+        // Mostrar botão de bypass após 5 segundos
+        const bypassTimer = setTimeout(() => setShowBypass(true), 5000)
+
+        // FAIL-SAFE: Se em 12 segundos não carregou, força a saída do loading
+        const failSafeTimer = setTimeout(() => {
+            console.warn('[Fail-Safe] Forcando entrada no app por timeout.')
+            setLoading(false)
+        }, 12000)
+
+        return () => {
+            clearTimeout(bypassTimer)
+            clearTimeout(failSafeTimer)
+        }
     }, [])
 
     const fetchData = async (retryCount = 0) => {
@@ -327,6 +343,27 @@ function App() {
                             <div className="dot"></div>
                         </div>
                     </div>
+                    {showBypass && (
+                        <button
+                            onClick={() => {
+                                setLoading(false);
+                                console.log('Bypass manual ativado pelo usuário');
+                            }}
+                            className="bypass-button"
+                            style={{
+                                marginTop: '20px',
+                                padding: '10px 20px',
+                                background: 'rgba(255,255,255,0.2)',
+                                border: '1px solid white',
+                                color: 'white',
+                                borderRadius: '20px',
+                                fontSize: '0.9rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Entrar sem Sincronizar
+                        </button>
+                    )}
                 </div>
             </div>
         )
