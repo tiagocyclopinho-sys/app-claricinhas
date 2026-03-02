@@ -5,17 +5,31 @@ import Despesas from './pages/Despesas'
 import Producao from './pages/Producao'
 import Vendas from './pages/Vendas'
 import Clientes from './pages/Clientes'
+import Dados from './pages/Dados'
 import { supabase } from './supabaseClient'
 import './App.css'
 
 function App() {
+    // Inicialização otimista: Tenta carregar do backup local primeiro para não abrir "vazio"
+    const getInitialData = (key) => {
+        try {
+            const saved = localStorage.getItem('claricinhas_backup');
+            if (saved) {
+                const backup = JSON.parse(saved);
+                return backup[key] || [];
+            }
+        } catch (e) { console.error('Erro ao ler backup inicial:', e); }
+        return [];
+    };
+
     const [activePage, setActivePage] = useState('dashboard')
-    const [despesas, setDespesas] = useState([])
-    const [producao, setProducao] = useState([])
-    const [vendas, setVendas] = useState([])
-    const [clientes, setClientes] = useState([])
+    const [despesas, setDespesas] = useState(() => getInitialData('despesas'))
+    const [producao, setProducao] = useState(() => getInitialData('producao'))
+    const [vendas, setVendas] = useState(() => getInitialData('vendas'))
+    const [clientes, setClientes] = useState(() => getInitialData('clientes'))
     const [loading, setLoading] = useState(true)
     const [dbError, setDbError] = useState(null) // Guardar a mensagem de erro
+    const [lastSync, setLastSync] = useState(null)
 
     // Lógica para o botão Voltar do aparelho
     useEffect(() => {
@@ -123,43 +137,47 @@ function App() {
 
         const results = await Promise.all(promises);
 
-        // Se alguma tabela carregou, já podemos mostrar o app
+        // Se alguma tabela carregou com sucesso
         if (syncCount > 0) {
             setLoading(false);
+            setLastSync(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
 
-            // Salva backup do que conseguimos carregar
+            // Salva backup atualizado
             try {
                 const currentBackup = {
-                    despesas: results.find(r => r?.name === 'despesas')?.data || [],
-                    producao: results.find(r => r?.name === 'producao')?.data || [],
-                    vendas: results.find(r => r?.name === 'vendas')?.data || [],
-                    clientes: results.find(r => r?.name === 'clientes')?.data || [],
+                    despesas: results.find(r => r?.name === 'despesas')?.data || despesas,
+                    producao: results.find(r => r?.name === 'producao')?.data || producao,
+                    vendas: results.find(r => r?.name === 'vendas')?.data || vendas,
+                    clientes: results.find(r => r?.name === 'clientes')?.data || clientes,
                     lastUpdate: new Date().toISOString()
                 };
                 localStorage.setItem('claricinhas_backup', JSON.stringify(currentBackup));
-            } catch (e) { console.warn('Erro ao atualizar backup parcial:', e); }
+            } catch (e) { console.warn('Erro ao atualizar backup:', e); }
 
         } else if (retryCount < 1) {
             console.log('[FetchData] Nenhuma tabela respondeu. Tentando novamente...');
             setTimeout(() => fetchData(retryCount + 1), 3000);
         } else {
-            console.error('[FetchData] Falha total em todas as tabelas.');
-            setDbError('O banco de dados não está respondendo. Verifique sua conexão.');
-
-            // Carrega o backup integral se tudo falhou
-            const saved = localStorage.getItem('claricinhas_backup');
-            if (saved) {
-                try {
-                    const backup = JSON.parse(saved);
-                    setDespesas(backup.despesas || []);
-                    setProducao(backup.producao || []);
-                    setVendas(backup.vendas || []);
-                    setClientes(backup.clientes || []);
-                } catch (e) { console.error('Erro ao ler backup:', e); }
-            }
+            console.error('[FetchData] Falha total em todas as tabelas após retentativas.');
+            setDbError('O banco de dados não está respondendo. Usando dados locais.');
             setLoading(false);
         }
     }
+
+    const loadLocalBackup = () => {
+        const saved = localStorage.getItem('claricinhas_backup');
+        if (saved) {
+            try {
+                const backup = JSON.parse(saved);
+                if (backup.despesas) setDespesas(backup.despesas);
+                if (backup.producao) setProducao(backup.producao);
+                if (backup.vendas) setVendas(backup.vendas);
+                if (backup.clientes) setClientes(backup.clientes);
+                return true;
+            } catch (e) { console.error('Erro ao ler backup manual:', e); }
+        }
+        return false;
+    };
 
     // Funções de atualização que salvam no Supabase
     const addDespesa = async (item) => {
@@ -358,8 +376,10 @@ function App() {
                     {showBypass && (
                         <button
                             onClick={() => {
+                                loadLocalBackup();
                                 setLoading(false);
-                                console.log('Bypass manual ativado pelo usuário');
+                                setDbError('Modo Offline: Usando dados salvos localmente.');
+                                console.log('Bypass manual ativado pelo usuário - Carregou backup local');
                             }}
                             className="bypass-button"
                             style={{
@@ -381,11 +401,12 @@ function App() {
         )
 
         switch (activePage) {
-            case 'dashboard': return <Dashboard despesas={despesas} vendas={vendas} producao={producao} setActivePage={setActivePage} />
+            case 'dashboard': return <Dashboard despesas={despesas} vendas={vendas} producao={producao} clientes={clientes} setActivePage={setActivePage} />
             case 'despesas': return <Despesas despesas={despesas} onAdd={addDespesa} onDelete={deleteDespesa} />
             case 'producao': return <Producao producao={producao} onAdd={addProducao} onDelete={deleteProducao} onUpdate={updateProducao} />
             case 'vendas': return <Vendas vendas={vendas} onAddVenda={addVenda} onDeleteVenda={deleteVenda} clientes={clientes} onAddCliente={addCliente} onDeleteCliente={deleteCliente} onUpdateCliente={updateCliente} producao={producao} onUpdateProducao={updateProducao} />
             case 'clientes': return <Clientes clientes={clientes} onAdd={addCliente} onDelete={deleteCliente} onUpdate={updateCliente} />
+            case 'dados': return <Dados despesas={despesas} producao={producao} vendas={vendas} clientes={clientes} />
             default: return <Dashboard />
         }
     }
@@ -400,7 +421,18 @@ function App() {
                 </div>
             )}
             <div className="background-overlay"></div>
-            <Sidebar activePage={activePage} setActivePage={setActivePage} />
+            <Sidebar
+                activePage={activePage}
+                setActivePage={setActivePage}
+                counts={{
+                    despesas: despesas.length,
+                    producao: producao.length,
+                    vendas: vendas.length,
+                    clientes: clientes.length
+                }}
+                lastSync={lastSync}
+                dbStatus={loading ? 'loading' : 'online'}
+            />
             <main className="main-content">
                 {renderPage()}
             </main>

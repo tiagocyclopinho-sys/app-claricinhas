@@ -1,16 +1,17 @@
 import React from 'react'
-import { LayoutDashboard, Receipt, Scissors, ShoppingBag, Menu, X, Users } from 'lucide-react'
+import { LayoutDashboard, Receipt, Scissors, ShoppingBag, Menu, X, Users, Database, RefreshCw } from 'lucide-react'
 import './Sidebar.css'
 
-function Sidebar({ activePage, setActivePage }) {
+function Sidebar({ activePage, setActivePage, counts, lastSync, dbStatus }) {
     const [isOpen, setIsOpen] = React.useState(false)
 
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'despesas', label: 'Despesas', icon: Receipt },
-        { id: 'producao', label: 'Produção', icon: Scissors },
-        { id: 'vendas', label: 'Vendas', icon: ShoppingBag },
-        { id: 'clientes', label: 'Clientes', icon: Users },
+        { id: 'despesas', label: 'Despesas', icon: Receipt, count: counts?.despesas },
+        { id: 'producao', label: 'Produção', icon: Scissors, count: counts?.producao },
+        { id: 'vendas', label: 'Vendas', icon: ShoppingBag, count: counts?.vendas },
+        { id: 'clientes', label: 'Clientes', icon: Users, count: counts?.clientes },
+        { id: 'dados', label: 'Backup / Dados', icon: Database },
     ]
 
     const toggleSidebar = () => setIsOpen(!isOpen)
@@ -40,10 +41,23 @@ function Sidebar({ activePage, setActivePage }) {
                             >
                                 <Icon size={20} />
                                 <span>{item.label}</span>
+                                {item.count !== undefined && (
+                                    <span className="nav-badge">{item.count}</span>
+                                )}
                             </button>
                         )
                     })}
                 </nav>
+
+                <div className="sidebar-footer">
+                    <div className="sync-info">
+                        <RefreshCw size={14} className={dbStatus === 'loading' ? 'spin' : ''} />
+                        <div>
+                            <p className="sync-label">Status: {dbStatus === 'online' ? 'Online' : 'Sincronizando...'}</p>
+                            {lastSync && <p className="sync-time">Lib. {lastSync}</p>}
+                        </div>
+                    </div>
+                </div>
             </aside>
 
             {isOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}

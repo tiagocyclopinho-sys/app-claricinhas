@@ -99,6 +99,14 @@
     background: linear-gradient(135deg, #ff6b6b, #fa5252);
 }
 
+.stat-icon.production {
+    background: linear-gradient(135deg, #fab005, #f59f00);
+}
+
+.stat-icon.clients {
+    background: linear-gradient(135deg, #ae3ec9, #9c36b5);
+}
+
 .stat-info p {
     font-size: 0.9rem;
     color: var(--text-dim);

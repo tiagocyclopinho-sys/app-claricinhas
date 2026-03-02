@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react'
-import { TrendingUp, Receipt, Scissors, ShoppingBag, AlertCircle, Calendar } from 'lucide-react'
+import { TrendingUp, Receipt, Scissors, ShoppingBag, AlertCircle, Calendar, Users } from 'lucide-react'
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import './Dashboard.css'
 
-function Dashboard({ despesas, vendas, producao, setActivePage }) {
+function Dashboard({ despesas, vendas, producao, clientes, setActivePage }) {
     const [dateRange, setDateRange] = useState({
         start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
         end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
@@ -35,6 +35,9 @@ function Dashboard({ despesas, vendas, producao, setActivePage }) {
         const totalDespesas = filteredDespesas.reduce((acc, curr) => acc + Number(curr.valorTotal || 0), 0)
         const totalVendas = filteredVendas.reduce((acc, curr) => acc + Number(curr.valorTotal || 0), 0)
 
+        // Valor total em estoque (independente de data, geralmente quer se ver o total)
+        const valorEstoque = producao.reduce((acc, curr) => acc + (Number(curr.quantidade) * Number(curr.valorUnitario)), 0)
+
         // Parcelas a vencer (próximos 7 dias)
         const now = new Date()
         const alertLimit = new Date()
@@ -49,8 +52,10 @@ function Dashboard({ despesas, vendas, producao, setActivePage }) {
                 .map(p => ({ ...p, cliente: v.cliente }))
         )
 
-        return { totalDespesas, totalVendas, parcelasVencendo }
-    }, [despesas, vendas, dateRange])
+        const totalClientes = (clientes || []).length
+
+        return { totalDespesas, totalVendas, valorEstoque, totalClientes, parcelasVencendo }
+    }, [despesas, vendas, producao, clientes, dateRange])
 
     return (
         <div className="dashboard-page">
@@ -79,7 +84,7 @@ function Dashboard({ despesas, vendas, producao, setActivePage }) {
             <div className="stats-grid">
                 <div className="stat-card glass-card clickable" onClick={() => setActivePage('vendas')}>
                     <div className="stat-icon sales">
-                        <TrendingUp size={24} />
+                        <ShoppingBag size={24} />
                     </div>
                     <div className="stat-info">
                         <p>Vendas no Período</p>
@@ -94,6 +99,26 @@ function Dashboard({ despesas, vendas, producao, setActivePage }) {
                     <div className="stat-info">
                         <p>Despesas no Período</p>
                         <h3>R$ {stats.totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                    </div>
+                </div>
+
+                <div className="stat-card glass-card clickable" onClick={() => setActivePage('producao')}>
+                    <div className="stat-icon production">
+                        <Scissors size={24} />
+                    </div>
+                    <div className="stat-info">
+                        <p>Valor em Estoque</p>
+                        <h3>R$ {stats.valorEstoque.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                    </div>
+                </div>
+
+                <div className="stat-card glass-card clickable" onClick={() => setActivePage('clientes')}>
+                    <div className="stat-icon clients">
+                        <Users size={24} />
+                    </div>
+                    <div className="stat-info">
+                        <p>Total de Clientes</p>
+                        <h3>{stats.totalClientes}</h3>
                     </div>
                 </div>
 

@@ -1,0 +1,96 @@
+.dados-page {
+    animation: fadeIn 0.5s ease;
+}
+
+.dados-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.dados-card {
+    padding: 2.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.dados-card:hover {
+    transform: translateY(-5px);
+}
+
+.card-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.card-icon.export {
+    background: linear-gradient(135deg, #4dabf7, #228be6);
+}
+
+.card-icon.import {
+    background: linear-gradient(135deg, #ae3ec9, #9c36b5);
+}
+
+.card-icon.danger {
+    background: linear-gradient(135deg, #ff6b6b, #fa5252);
+}
+
+.dados-card h3 {
+    font-size: 1.4rem;
+    color: var(--text-main);
+}
+
+.dados-card p {
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+.file-input-wrapper input {
+    display: none;
+}
+
+.status-banner {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 2rem;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: white;
+    box-shadow: var(--shadow);
+    animation: slideIn 0.3s ease-out;
+    z-index: 1000;
+}
+
+.status-banner.success {
+    background: var(--success);
+}
+
+.status-banner.error {
+    background: var(--danger);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
