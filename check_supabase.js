@@ -11,14 +11,18 @@ async function checkData() {
 
     for (const table of tables) {
         try {
+            console.log(`Searching table: ${table}...`);
+            const start = Date.now();
             const { data, error, count } = await supabase
                 .from(table)
-                .select('*', { count: 'exact', head: true });
+                .select('*', { count: 'exact', head: false })
+                .limit(10); // Limit during diagnosis to see if basic connectivity works
+            const end = Date.now();
 
             if (error) {
-                console.error(`Error checking table ${table}:`, error.message, error.details || '', error.hint || '');
+                console.error(`Error checking table ${table} (${end - start}ms):`, error.message, error.details || '', error.hint || '');
             } else {
-                console.log(`Table ${table}: ${count} rows`);
+                console.log(`Table ${table}: ${count} rows (Query took ${end - start}ms)`);
             }
         } catch (e) {
             console.error(`Exception checking table ${table}:`, e.message);

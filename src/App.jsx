@@ -57,95 +57,107 @@ function App() {
     const fetchData = async (retryCount = 0) => {
         setLoading(true)
         setDbError(null)
-        console.log(`[FetchData] Iniciando tentativa ${retryCount + 1}`)
+        console.log(`[FetchData] Iniciando busca granular (Tentativa ${retryCount + 1})...`)
 
-        try {
-            // 🚀 Busca paralela para máxima performance
-            const [resD, resP, resV, resC] = await Promise.all([
-                supabase.from('despesas').select('*').order('created_at', { ascending: false }),
-                supabase.from('producao').select('*').order('created_at', { ascending: false }),
-                supabase.from('vendas').select('*').order('created_at', { ascending: false }),
-                supabase.from('clientes').select('*').order('nome')
-            ])
-
-            const errors = []
-            if (resD.error) errors.push(`Despesas: ${resD.error.message}`)
-            if (resP.error) errors.push(`Produção: ${resP.error.message}`)
-            if (resV.error) errors.push(`Vendas: ${resV.error.message}`)
-            if (resC.error) errors.push(`Clientes: ${resC.error.message}`)
-
-            if (errors.length > 0) {
-                console.warn('[FetchData] Erros detectados:', errors)
-                if (retryCount < 2) {
-                    console.log('[FetchData] Agendando nova tentativa em 2s...')
-                    setTimeout(() => fetchData(retryCount + 1), 2000)
-                    return // Sai sem desativar o Loading, a próxima tentativa cuidará disso
-                }
-                throw new Error(errors.join(' | '))
-            }
-
-            console.log('[FetchData] Dados recebidos com sucesso. Mapeando...')
-
-            const d = resD.data || []
-            const p = resP.data || []
-            const v = resV.data || []
-            const c = resC.data || []
-
-            // Mapeamentos seguros
-            const mappedD = d.map(item => ({
-                ...item,
-                valorTotal: item.valor_total || item.valor || 0,
-                dataVencimento: item.data_vencimento || (item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0])
-            }))
-
-            const mappedP = p.map(item => ({
-                ...item,
-                valorUnitario: item.valor_unitario || 0,
-                valorTotal: item.valor_total || 0
-            }))
-
-            const mappedV = v.map(item => ({
-                ...item,
-                valorTotal: item.valor_total || item.valor || 0,
-                dataVenda: item.data_venda || (item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
-                cliente: item.cliente_nome || item.cliente || 'Consumidor',
-                metodoPagamento: item.metodo_pagamento || 'Dinheiro'
-            }))
-
-            setDespesas(mappedD)
-            setProducao(mappedP)
-            setVendas(mappedV)
-            setClientes(c)
-
-            // Backup silencioso
-            try {
-                localStorage.setItem('claricinhas_backup', JSON.stringify({
-                    despesas: mappedD, producao: mappedP, vendas: mappedV, clientes: c, lastUpdate: new Date().toISOString()
+        let syncCount = 0;
+        const tables = [
+            {
+                name: 'despesas',
+                setter: setDespesas,
+                mapper: data => data.map(item => ({
+                    ...item,
+                    valorTotal: item.valor_total || item.valor || 0,
+                    dataVencimento: item.data_vencimento || (item.created_at?.split('T')[0]) || new Date().toISOString().split('T')[0]
                 }))
-            } catch (e) { console.warn('Falha no backup local:', e) }
+            },
+            {
+                name: 'producao',
+                setter: setProducao,
+                mapper: data => data.map(item => ({
+                    ...item,
+                    valorUnitario: item.valor_unitario || 0,
+                    valorTotal: item.valor_total || 0
+                }))
+            },
+            {
+                name: 'vendas',
+                setter: setVendas,
+                mapper: data => data.map(item => ({
+                    ...item,
+                    valorTotal: item.valor_total || item.valor || 0,
+                    dataVenda: item.data_venda || (item.created_at?.split('T')[0]) || new Date().toISOString().split('T')[0],
+                    cliente: item.cliente_nome || item.cliente || 'Consumidor',
+                    metodoPagamento: item.metodo_pagamento || 'Dinheiro'
+                }))
+            },
+            {
+                name: 'clientes',
+                setter: setClientes,
+                mapper: data => data
+            }
+        ];
 
-            console.log('[FetchData] Sucesso total.')
-            setLoading(false)
+        // Processa cada tabela individualmente
+        const promises = tables.map(async (t) => {
+            try {
+                // Tenta buscar sem ordenação complexa para garantir velocidade
+                const { data, error } = await supabase.from(t.name).select('*');
 
-        } catch (error) {
-            console.error('[FetchData] Erro Crítico:', error)
-            setDbError(error.message || 'Falha na conexão')
+                if (error) {
+                    console.error(`[FetchData] Erro em ${t.name}:`, error.message);
+                    return { name: t.name, status: 'error' };
+                }
 
-            // Tenta carregar backup se o banco falhou de vez
-            const saved = localStorage.getItem('claricinhas_backup')
+                if (data) {
+                    const mapped = t.mapper(data);
+                    t.setter(mapped);
+                    syncCount++;
+                    console.log(`[FetchData] ${t.name} carregado: ${data.length} itens.`);
+                    return { name: t.name, status: 'success', data: mapped };
+                }
+            } catch (err) {
+                console.error(`[FetchData] Falha crítica em ${t.name}:`, err.message);
+                return { name: t.name, status: 'exception' };
+            }
+        });
+
+        const results = await Promise.all(promises);
+
+        // Se alguma tabela carregou, já podemos mostrar o app
+        if (syncCount > 0) {
+            setLoading(false);
+
+            // Salva backup do que conseguimos carregar
+            try {
+                const currentBackup = {
+                    despesas: results.find(r => r?.name === 'despesas')?.data || [],
+                    producao: results.find(r => r?.name === 'producao')?.data || [],
+                    vendas: results.find(r => r?.name === 'vendas')?.data || [],
+                    clientes: results.find(r => r?.name === 'clientes')?.data || [],
+                    lastUpdate: new Date().toISOString()
+                };
+                localStorage.setItem('claricinhas_backup', JSON.stringify(currentBackup));
+            } catch (e) { console.warn('Erro ao atualizar backup parcial:', e); }
+
+        } else if (retryCount < 1) {
+            console.log('[FetchData] Nenhuma tabela respondeu. Tentando novamente...');
+            setTimeout(() => fetchData(retryCount + 1), 3000);
+        } else {
+            console.error('[FetchData] Falha total em todas as tabelas.');
+            setDbError('O banco de dados não está respondendo. Verifique sua conexão.');
+
+            // Carrega o backup integral se tudo falhou
+            const saved = localStorage.getItem('claricinhas_backup');
             if (saved) {
                 try {
-                    console.log('[FetchData] Carregando dados do backup local...')
-                    const backup = JSON.parse(saved)
-                    setDespesas(backup.despesas || [])
-                    setProducao(backup.producao || [])
-                    setVendas(backup.vendas || [])
-                    setClientes(backup.clientes || [])
-                } catch (e) {
-                    console.error('[FetchData] Backup corrompido:', e)
-                }
+                    const backup = JSON.parse(saved);
+                    setDespesas(backup.despesas || []);
+                    setProducao(backup.producao || []);
+                    setVendas(backup.vendas || []);
+                    setClientes(backup.clientes || []);
+                } catch (e) { console.error('Erro ao ler backup:', e); }
             }
-            setLoading(false)
+            setLoading(false);
         }
     }
 
