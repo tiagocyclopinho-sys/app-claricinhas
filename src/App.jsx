@@ -44,11 +44,13 @@ function App() {
         try {
             console.log(`Iniciando busca de dados (Tentativa ${retryCount + 1})...`)
 
-            // Cada query agora é tratada individualmente para saber qual falhou
-            const resD = await supabase.from('despesas').select('*').order('created_at', { ascending: false })
-            const resP = await supabase.from('producao').select('*').order('created_at', { ascending: false })
-            const resV = await supabase.from('vendas').select('*').order('created_at', { ascending: false })
-            const resC = await supabase.from('clientes').select('*').order('nome')
+            // 🚀 MUITO MAIS RÁPIDO: Busca tudo em paralelo para evitar timeouts
+            const [resD, resP, resV, resC] = await Promise.all([
+                supabase.from('despesas').select('*').order('created_at', { ascending: false }),
+                supabase.from('producao').select('*').order('created_at', { ascending: false }),
+                supabase.from('vendas').select('*').order('created_at', { ascending: false }),
+                supabase.from('clientes').select('*').order('nome')
+            ])
 
             const errors = []
             if (resD.error) errors.push(`Despesas: ${resD.error.message}`)
@@ -57,12 +59,12 @@ function App() {
             if (resC.error) errors.push(`Clientes: ${resC.error.message}`)
 
             if (errors.length > 0) {
-                console.error('Erros no Supabase:', errors)
+                console.warn('Erros temporários no Supabase:', errors)
 
-                // Se for um erro temporário e tivermos poucas tentativas, tenta de novo em 3 segundos
+                // Se houver erro, tentamos de novo 3 vezes
                 if (retryCount < 2) {
-                    console.log('Tentando reconectar automaticamente em 3s...')
-                    setTimeout(() => fetchData(retryCount + 1), 3000)
+                    console.log('Tentando reconexão rápida em 2s...')
+                    setTimeout(() => fetchData(retryCount + 1), 2000)
                     return
                 }
 
